@@ -14,6 +14,15 @@ class FaqsController extends Controller
              
 
             $data=Faq::get_faqs_json_data($faqs);
+            if(empty($data)){
+                return response()->json(
+                    [
+                        'message'=>'FAQ(s) empty data',
+                        'error'=>true,
+                        'total'=>"0",
+                        'data'=>array(),
+                    ]);
+            }
             return response()->json(
                 [
                     'message'=>'FAQ(s) Retrieved Successfully',

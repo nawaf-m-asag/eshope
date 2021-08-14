@@ -42,7 +42,7 @@ class ProductController extends Controller
             $sort = isset($request->sort)? $request->sort:'order';
             $filters['search'] = isset($request->search)? $request->search:null;
             $filters['tags']= isset($request->tags)? $request->tags:"";
-            $filters['attribute_value_ids'] = isset($request->attribute_value_ids)? $request->$filters['attribute_value_ids']: null;
+            $filters['attribute_value_ids'] = (isset($request->attribute_value_ids)) ? $request->attribute_value_ids: null;
             $filters['is_similar_products']= isset($request->is_similar_products)? $request->is_similar_products: null;
             $filters['product_type'] = isset($request->product_type )? $request->product_type :null;
             $category_id = isset($request->category_id)? $request->category_id:null;
@@ -56,6 +56,7 @@ class ProductController extends Controller
             if (!empty($products['product'])) {
                 $this->response['error'] = false;
                 $this->response['message'] = "Products retrieved successfully !";
+                $this->response['search'] = (isset($products['search']) && !empty($products['search'])) ? $products['search'] :null;
                 $this->response['filters'] = (isset($products['filters']) && !empty($products['filters'])) ? $products['filters'] : [];
                 $this->response['total'] = (isset($products['total'])) ? strval($products['total']) : '';
                 $this->response['offset'] = (isset($request->offset) && !empty($request->offset)) ? $request->offset : '0';
@@ -65,9 +66,6 @@ class ProductController extends Controller
                 $this->response['message'] = "Products Not Found !";
                 $this->response['data'] = array();
             }
-    
-              
-
         }
         return response()->json($this->response);
      

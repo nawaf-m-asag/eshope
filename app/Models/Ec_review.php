@@ -12,6 +12,25 @@ class Ec_review extends Model
     {
         return $this->belongsTo('App\Models\Ec_customer');
     }
+
+    public static function get_review_images($product_id)
+    {
+        $data=[];
+        $no_of_rating=Ec_review::where("status","published")->where('product_id',$product_id)->count();
+        if(!empty($no_of_rating)){
+            $total_reviews=Ec_review::where("status","published")->where('product_id',$product_id)->where('comment','!=',"")->count();
+            $reviews= Ec_review::where("status","published")->where("product_id",$product_id)->orderBy("created_at")->get();
+            $data['total_images']="0";
+            $data['total_reviews_with_images']="0";
+            $data['no_of_rating']="$no_of_rating";
+            $data['total_reviews']="$total_reviews";
+            $data['product_rating']=Ec_review::get_reviews_json_data($reviews);
+            return [$data];
+        }
+        else
+        return $data;
+        
+    }
     
     public static  function get_reviews_json_data($reviews)
    {

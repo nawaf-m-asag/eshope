@@ -22,7 +22,7 @@ class Ec_wish_list extends Model
             return 1;
 
         }else{
-
+            
             return 0;
         }
     }

@@ -1,6 +1,6 @@
 @if ($product)
     <div class="ps-product__thumbnail">
-        <h1>pro</h1>
+        
         <a href="{{ $product->url }}">
             <img src="{{ RvMedia::getImageUrl($product->image, 'small', false, RvMedia::getDefaultImage()) }}" alt="{{ $product->name }}">
         </a>
