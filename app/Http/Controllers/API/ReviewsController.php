@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Ec_review;
 
 
@@ -39,46 +40,84 @@ class ReviewsController extends Controller
             return response()->json($this->response);
             
     } 
-    public function set_product_rating()
+    public function setRating(Request $request)
     {
       
 
         $validator = Validator::make($request->all(), [
-            'user_id'=>'integer',    
-            'product_id'=>'integer',
-            'rating'=>'integer',
+            'user_id'=>'required|integer',    
+            'product_id'=>'required|integer',
+            'rating'=>'required|integer',
             'comment'=>'nullable|string',
            
           ]);
 
+          $user_id =$request->user_id;
+          $product_id =$request->product_id;
+          $rating =$request->rating;
+          $comment = isset($request->comment)? $request->comment:'';
+         
+
       
         if ($validator->fails()) {
+          
             $response['error'] = true;
-            $response['message'] = strip_tags(validation_errors());
+            $response['message'] = "error";
             $response['data'] = array();
-            return response()->json($this->response);
+            return response()->json($response);
         } else {
            
 
-            $res = DB::select('*')->join('product_variants pv', 'pv.id=oi.product_variant_id')->join('products p', 'p.id=pv.product_id')->where(['pv.product_id' => $_POST['product_id'], 'oi.user_id' => $_POST['user_id'], 'oi.active_status!=' => 'returned'])->limit(1)->get('order_items oi')->result_array();
+            $res = DB::table('ec_products as p')->join('ec_order_product as eop','eop.product_id','=','p.id')->join('ec_orders as eo','eop.order_id','=','eo.id')->where('eo.user_id',$user_id)->where('eop.product_id',$product_id)->where('eo.status','delivering')->limit(1)->get()->toarray();
+           
             if (empty($res)) {
+                
                 $response['error'] = true;
                 $response['message'] = 'You cannot review as the product is not purchased yet!';
                 $response['data'] = array();
-                echo json_encode($response);
-                return;
+                return response()->json($response);
             }
 
-            $rating_data = fetch_details(['user_id' => $_POST['user_id'], 'product_id' => $_POST['product_id']], 'product_rating', 'images');
-            $this->rating_model->set_rating($_POST);
-            $rating_data = $this->rating_model->fetch_rating((isset($_POST['product_id'])) ? $_POST['product_id'] : '', '', '25', '0', 'id', 'DESC');
-            $rating['product_rating'] = $rating_data['product_rating'];
-            $rating['no_of_rating'] = $rating_data['rating'][0]['no_of_rating'];
+           
+            $data=[
+                'customer_id'=>$user_id,    
+                'product_id'=>$product_id,
+                'star'=>$rating,
+                'comment'=>$comment,
+                ];
+                
+      
+            $ec_wish_lists=Ec_review::create($data);
+            $total= Ec_review::where("status","published")->where("product_id",$product_id)->count();
+
+            $reviews= Ec_review::limit(25)->offset(0)->where("status","published")->where("product_id",$product_id)->where("comment",'!=',"")->orderBy("created_at")->get();
+            $rating_data['product_rating']=Ec_review::get_reviews_json_data($reviews);
+            $rating_data['no_of_rating']= Ec_review::where("status","published")->where("comment",'!=',"")->where("product_id",$product_id)->count();
             $response['error'] = false;
             $response['message'] = 'Product Rated Successfully';
-            $response['data'] = $rating;
-            echo json_encode($response);
-            return;
+            $response['data'] = $rating_data;
+            return response()->json($response);
+        }
+    }
+    public function delete_product_rating(Request $request)
+    {
+        
+   
+        $validator = Validator::make($request->all(), [
+            'rating_id'=>'required|integer',   
+          ]);
+          $rating_id =$request->rating_id;
+        if ($validator->fails()) {
+            $response['error'] = true;
+            $response['message'] = 'no Deleted Rating';
+            $response['data'] = array();
+            return response()->json($response);
+        } else {
+            $Ec_review=Ec_review::where('id',$rating_id)->delete();
+            $response['error'] = false;
+            $response['message'] = 'Deleted Rating Successfully';
+            $response['data'] = array();
+            return response()->json($response);
         }
     }
 }

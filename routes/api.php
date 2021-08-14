@@ -22,6 +22,9 @@
     Route::post('remove_from_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_removeFav');
     Route::post('get_products',App\Http\Controllers\API\ProductController::class . '@getProduct');
     Route::post('get_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_getFav');
+    Route::post('set_product_rating',App\Http\Controllers\API\ReviewsController::class . '@setRating');
+    Route::post('delete_product_rating',App\Http\Controllers\API\ReviewsController::class . '@delete_product_rating');
+
+
+
     
-
-

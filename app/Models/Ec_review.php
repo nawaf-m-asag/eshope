@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Ec_review extends Model
 {
 
+    protected $fillable = [
+        'customer_id',
+        'product_id',
+        'star',
+        'comment',
+    ];
 
     public function Customer()
     {
@@ -90,6 +96,8 @@ class Ec_review extends Model
         
     return $review;
    }
+
+   
    
    
 }
