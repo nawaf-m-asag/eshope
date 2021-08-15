@@ -24,6 +24,7 @@
     Route::post('get_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_getFav');
     Route::post('set_product_rating',App\Http\Controllers\API\ReviewsController::class . '@setRating');
     Route::post('delete_product_rating',App\Http\Controllers\API\ReviewsController::class . '@delete_product_rating');
+    Route::post('get_slider_images',App\Http\Controllers\API\Simple_slidersController::class . '@getSlider');
 
 
 

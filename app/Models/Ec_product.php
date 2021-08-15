@@ -17,7 +17,6 @@ class Ec_product extends Model
     {
   
        
-
         $query=DB::table('ec_products as p')    
         ->Join('ec_product_category_product as cp','cp.product_id','=','p.id')
             ->leftJoin('ec_product_categories as c',function($query){
@@ -40,8 +39,7 @@ class Ec_product extends Model
         'p.content',
         'p.images',
         'tax.percentage',
-        'p.is_variation',
-       ]
+        'p.is_variation',]
     );
     
     
@@ -426,9 +424,6 @@ public static function getVariant_ids($id){
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
         ->select('p.price','p.sale_price','tax.percentage as tax_percentage')->get()->toarray();
     }
-    
-
-
         // if ($percentage > 0) {
         //     $price_tax_amount = $response[0]->price * ($percentage / 100);
         //     $special_price_tax_amount = $response[0]->sale_price * ($percentage / 100);
