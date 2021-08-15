@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Simple_slider extends Model
+class Ec_product_collections extends Model
 {
 
     public static  function get_slider_data()

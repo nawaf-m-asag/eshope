@@ -25,7 +25,8 @@
     Route::post('set_product_rating',App\Http\Controllers\API\ReviewsController::class . '@setRating');
     Route::post('delete_product_rating',App\Http\Controllers\API\ReviewsController::class . '@delete_product_rating');
     Route::post('get_slider_images',App\Http\Controllers\API\Simple_slidersController::class . '@getSlider');
-
+    Route::post('get_sections',App\Http\Controllers\API\CollectionsController::class . '@getSection');
+    
 
 
     
