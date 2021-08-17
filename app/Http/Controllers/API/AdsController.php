@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Simple_slider;
+use App\Models\Ad;
 
 use RvMedia;
-class Simple_slidersController extends Controller
+class AdsController extends Controller
 {
-    public function getSlider(Request $request)
+    public function getOfferImages(Request $request)
     {
 $data=[];
-        $res=Simple_slider::get_slider_data();
+        $res=Ad::get_offer_images();
         foreach ($res as $i=> $row) {
             $json_data[$i]['id']="$row->id";
             $json_data[$i]['type']='default';

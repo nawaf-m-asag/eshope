@@ -26,6 +26,9 @@
     Route::post('delete_product_rating',App\Http\Controllers\API\ReviewsController::class . '@delete_product_rating');
     Route::post('get_slider_images',App\Http\Controllers\API\Simple_slidersController::class . '@getSlider');
     Route::post('get_sections',App\Http\Controllers\API\CollectionsController::class . '@getSection');
+    Route::post('get_offer_images',App\Http\Controllers\API\AdsController::class . '@getOfferImages');
+    Route::post('manage_cart',App\Http\Controllers\API\CartController::class . '@addToCart');
+
     
 
 
