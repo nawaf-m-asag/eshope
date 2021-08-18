@@ -28,7 +28,10 @@
     Route::post('get_sections',App\Http\Controllers\API\CollectionsController::class . '@getSection');
     Route::post('get_offer_images',App\Http\Controllers\API\AdsController::class . '@getOfferImages');
     Route::post('manage_cart',App\Http\Controllers\API\CartController::class . '@addToCart');
+    Route::post('remove_from_cart',App\Http\Controllers\API\CartController::class . '@removeFromCart');
+    Route::post('get_user_cart',App\Http\Controllers\API\CartController::class . '@_getCart');
 
+    
     
 
 

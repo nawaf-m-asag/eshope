@@ -3,7 +3,8 @@ namespace App\Models;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\Ec_product;
+use RvMedia;
 class Cart extends Model
 {
    public static function get_cart_count($user_id)
@@ -130,25 +131,27 @@ class Cart extends Model
 {
     
     $query=DB::table('ec_products as p')
-    ->join('ec_product_variations as pv','p.id','=','pv.product_id')
-   
     ->leftJoin('cart','cart.product_variant_id','=','p.id')
+    ->rightJoin('ec_products  as pp',function($query){
+        $query->on('pp.id','=','cart.product_variant_id');
+    })
     ->select([DB::raw('DISTINCT(p.id)'),
     DB::raw('(select sum(qty)  from cart where user_id="' . $user_id . '" and qty!=0  and  is_saved_for_later = "' . $is_saved_for_later . '" ) as total_items'),
     DB::raw('(select count(id) from cart where user_id="' . $user_id . '" and qty!=0 and  is_saved_for_later = "' . $is_saved_for_later . '" ) as cart_count'),
-    'p.quantity as qty',
+    'cart.user_id',
+    'cart.product_variant_id',
+    'cart.qty',
+    'cart.is_saved_for_later',
+    'cart.created_at as date_created',
     'p.sku as slug',
     'p.name',
     'p.description as short_description',
     'p.price',
-    'p.sale_price',
+    'p.sale_price as special_price',
     'p.content as description',
-    'pv.configurable_product_id as product_id',
-   
+    'p.images',
     'p.is_variation',]
 );
-
-
 
     if ($product_variant_id == true) {
     $query=$query->where('cart.product_variant_id',$product_variant_id)
@@ -168,8 +171,11 @@ class Cart extends Model
 
    
     $query=$query->orderBy('cart.id', "DESC");
+    
     $data = $query->get()->toarray();
+ 
    
+  
     // print_r($t->db->last_query());
     $total = array();
     $variant_id = array();
@@ -180,17 +186,26 @@ class Cart extends Model
 
     foreach ($data as $i => $value) {
         
-    
-        $data[$i]->tax_percentage=Cart::get_tax_percentage($value->product_id);
+        $data[$i]->minimum_order_quantity=1;
+        $data[$i]->antity_step_size=1;
+        $data[$i]->total_allowed_quantity=5;
+        $data[$i]->tax_percentage=Cart::get_tax_percentage($value->id);
+
+        //use to get first image in array it is defulte
+        $product_images=json_decode( $data[$i]->images);
+            $default_imag=null;
+            if(!empty($product_images))
+            $default_imag=$product_images[0];
+
 
         $prctg = (isset($data[$i]->tax_percentage) && intval($data[$i]->tax_percentage) > 0 && $data[$i]->tax_percentage != null) ? $data[$i]->tax_percentage : '0';
        
         $price_tax_amount = $data[$i]->price * ($prctg / 100);
-        $special_price_tax_amount = $data[$i]->sale_price* ($prctg / 100);
+        $special_price_tax_amount = $data[$i]->special_price* ($prctg / 100);
         
-        // $data[$i]['image_sm'] = get_image_url($data[$i]['image'], 'thumb', 'sm');
-        // $data[$i]['image_md'] = get_image_url($data[$i]['image'], 'thumb', 'md');
-        // $data[$i]['image'] = get_image_url($data[$i]['image']);
+        $data[$i]->image_sm= RvMedia::getImageUrl($default_imag,'small', false, RvMedia::getDefaultImage());
+        $data[$i]->image_md= RvMedia::getImageUrl($default_imag,'medium', false, RvMedia::getDefaultImage());
+        $data[$i]->image= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
         
 
         
@@ -199,12 +214,13 @@ class Cart extends Model
 
         $variant_id[$i] = $data[$i]->id;
         $quantity[$i] = intval($data[$i]->qty);
-        if (floatval($data[$i]->sale_price) > 0) {
-            $total[$i] = floatval($data[$i]->sale_price + $special_price_tax_amount) * $data[$i]->qty;
+        if (floatval($data[$i]->special_price) > 0) {
+            $total[$i] = floatval($data[$i]->special_price + $special_price_tax_amount) * $data[$i]->qty;
         } else {
-            $total[$i] = floatval($data[$i]->price+ $price_tax_amount) * $data[$i]->qty;
+            
+            $total[$i] =floatval($data[$i]->price+ $price_tax_amount) *$data[$i]->qty;
         }
-        $data[$i]->sale_price= $data[$i]->sale_price+ $special_price_tax_amount;
+        $data[$i]->special_price= $data[$i]->special_price+ $special_price_tax_amount;
         $data[$i]->price= $data[$i]->price+ $price_tax_amount;
 
         $percentage[$i] = (isset($data[$i]->tax_percentage) && floatval($data[$i]->tax_percentage) > 0) ? $data[$i]->tax_percentage: 0;
@@ -235,7 +251,7 @@ class Cart extends Model
     $data['tax_amount'] = strval(array_sum($amount));
     $data['total_arr'] = $total;
     $data['variant_id'] = $variant_id;
-   // $data['delivery_charge'] = $delivery_charge;
+    $data['delivery_charge'] = "0";
     $data['overall_amount'] = strval($overall_amt);
     $data['amount_inclusive_tax'] = strval($overall_amt + $tax_amount);
     return $data;
@@ -247,8 +263,82 @@ class Cart extends Model
         ->select('tax.percentage')
         ->where('p.id',$id)
         ->get()->toarray();
-        
-    
+
+        if($res[0]->percentage==null){
+            $res=DB::table('ec_products as p')
+
+        ->leftJoin('ec_product_variations as pv','pv.configurable_product_id','=','p.id')   
+        ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
+        ->select('tax.percentage')
+        ->where('pv.product_id',$id)
+        ->get()->toarray();
+
+        }
+        if($res[0]->percentage==null)
+        {
+            return 0;
+        }
+        else
         return $res[0]->percentage;
     }
+   public static function remove_from_cart($data)
+    {
+        if (isset($data->user_id) && !empty($data->user_id)) {
+           $query= DB::table('cart')->where('user_id', $data->user_id);
+            if (isset($data->product_variant_id)) {
+                $product_variant_id = explode(',', $data->product_variant_id);
+                $query=$query->whereIn('product_variant_id', $product_variant_id);
+            }
+            return $query->delete();
+        } else {
+            return false;
+        }
+    }
+    public static function get_user_cart($user_id, $is_saved_for_later = 0, $product_variant_id = '')
+    {
+
+      
+        $q = DB::table('ec_products as p')
+        ->join('ec_product_variations as pv','pv.configurable_product_id','=','p.id')
+        ->join('cart as c','c.product_variant_id','pv.product_id');
+        // ->where('c.user_id',$user_id)
+        // ->where('c.qty','!=',0);
+    
+        if (!empty($product_variant_id)) {
+            $q=$q->where('c.product_variant_id', $product_variant_id);
+        }
+        $res =  $q->select(
+            'p.id',
+            'c.user_id',
+            'pv.product_id as product_variant_id',
+            'p.name',
+            'c.qty',
+            'c.is_saved_for_later',
+            'c.created_at as date_created',
+            'p.sku as slug',
+            'p.description as short_description',
+            'p.price',
+            'p.sale_price as special_price',
+            'p.content as description',
+
+        )->orderBy('c.id', 'DESC')->get()->toarray();
+
+
+        
+
+        if (!empty($res)) {
+
+            $res = array_map(function ($d) {    
+                $d->minimum_order_quantity =  1;
+                $d->quantity_step_size=   1;
+                $d->total_allowed_quantity = '';
+                $d->product_variants= Ec_product::getVariants($d->id,$d->product_variant_id);
+                return $d;
+            }, $res);
+        }
+        
+        return $res;
+    }
+    
+   
 }

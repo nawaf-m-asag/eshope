@@ -122,10 +122,10 @@ class Ec_product extends Model
             $order = 'desc';
             $products=$query->orderBy($sort,$order);
         }
+      
         if (isset($id) && !empty($id) && $id != null) {
             if (is_array($id) && !empty($id)) {
                 $products=$query->where('p.id', $id);
-                dd($id);
                
             } else {
                 if (isset($filter) && !empty($filter['is_similar_products']) && $filter['is_similar_products'] == '1') {
@@ -313,13 +313,17 @@ public static function get_products_By_ids($products_ids,$user_id=null){
         return $attributes;
     }
 
-    public static function getVariants($id)
+    public static function getVariants($id,$variants_id=null)
     {
       $variants=  DB::table('ec_products as p')
         ->join('ec_product_variations as pv','p.id','=','pv.product_id')
         ->where('pv.configurable_product_id',$id)
         ->where('p.status','published')
-        ->select('p.*')->get();
+        ->select('p.*');
+        if($variants_id!=null)
+        $variants=$variants->where('pv.product_id',$variants_id);
+
+         $variants=$variants->get();
       
         if($variants=="[]"){
             
