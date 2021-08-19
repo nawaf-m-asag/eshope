@@ -131,36 +131,39 @@ class CartController extends Controller
             $is_saved_for_later=$request->is_saved_for_later;
             $is_saved_for_later = (isset($request->is_saved_for_later) && $request->is_saved_for_later== 1) ? $request->is_saved_for_later: 0;
             $cart_user_data = Cart::get_user_cart($request->user_id, $is_saved_for_later);
+            
             $cart_total_response = Cart::get_cart_total($user_id, '', $is_saved_for_later);
             $tmp_cart_user_data = $cart_user_data;
         
             if (!empty($tmp_cart_user_data)) {
                 for ($i = 0; $i < count($tmp_cart_user_data); $i++) {
-                    $product_data =Fun::fetch_details('id',$tmp_cart_user_data[$i]->product_variant_id, 'ec_products','id,status');
-                   
+                    $product_data =Fun::fetch_details('id',$tmp_cart_user_data[$i]['product_variant_id'], 'ec_products','id,status');
+                     
                     if (!empty($product_data[0]->id)) {
-                        $pro_details = Ec_product::fetch_product_json_data($user_id, null, $tmp_cart_user_data[$i]->id);
-                      
+                        $pro_details = Ec_product::fetch_product_json_data($user_id, null, $tmp_cart_user_data[$i]['id']);
+                     
                         if (!empty($pro_details['product'])) {
                             if (trim($pro_details['product'][0]['availability']) == 0 && $pro_details['product'][0]['availability'] != null) {
-                                update_details(['is_saved_for_later' => '1'], $cart_user_data[$i]['id'], 'cart');
+                                Fun::update_details(['is_saved_for_later' => '1'],'product_variant_id' ,$cart_user_data[$i]['product_variant_id'], 'cart');
                                 unset($cart_user_data[$i]);
                             }
 
                             if (!empty($pro_details['product'])) {
-                                $cart_user_data[$i]->product_details= $pro_details['product'];
+            
+                                $cart_user_data[$i]['product_details']= $pro_details['product'];
                             } else {
-                                delete_details(['id' => $cart_user_data[$i]['id']], 'cart');
+                             
+                                Fun::delete_details('id',$cart_user_data[$i]['product_variant_id'], 'cart');
                                 unset($cart_user_data[$i]);
                                 continue;
                             }
                         } else {
-                            delete_details(['id' => $cart_user_data[$i]['id']], 'cart');
+                            Fun::delete_details('id',$cart_user_data[$i]['product_variant_id'], 'cart');
                             unset($cart_user_data[$i]);
                             continue;
                         }
                     } else {
-                        delete_details(['id' => $cart_user_data[$i]['id']], 'cart');
+                        Fun::delete_details('id',$cart_user_data[$i]['product_variant_id'], 'cart');
                         unset($cart_user_data[$i]);
                         continue;
                     }
@@ -182,7 +185,7 @@ class CartController extends Controller
             $this->response['total_quantity'] = $cart_total_response['quantity'];
             $this->response['sub_total'] = $cart_total_response['sub_total'];
             $this->response['delivery_charge'] ="0";
-            
+
             $this->response['tax_percentage'] = (isset($cart_total_response['tax_percentage'])) ? $cart_total_response['tax_percentage'] : "0";
             $this->response['tax_amount'] = (isset($cart_total_response['tax_amount'])) ? $cart_total_response['tax_amount'] : "0";
             $this->response['overall_amount'] = $cart_total_response['overall_amount'];

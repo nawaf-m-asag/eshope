@@ -45,8 +45,11 @@ class Cart extends Model
         if (!empty($check_current_stock_status) && $check_current_stock_status['error'] == true) {
             // $check_current_stock_status['csrfName'] = $this->security->get_csrf_token_name();
             // $check_current_stock_status['csrfHash'] = $this->security->get_csrf_hash();
-            // print_r(json_encode($check_current_stock_status));
-            return true;
+           // return response()->json($check_current_stock_status);
+           // json_decode($check_current_stock_status));
+           // dd($check_current_stock_status);
+             true;
+            
         }
 
         for ($i = 0; $i < count($product_variant_id); $i++) {
@@ -294,23 +297,25 @@ class Cart extends Model
             return false;
         }
     }
+    
     public static function get_user_cart($user_id, $is_saved_for_later = 0, $product_variant_id = '')
     {
+     
 
-      
         $q = DB::table('ec_products as p')
-        ->join('ec_product_variations as pv','pv.configurable_product_id','=','p.id')
-        ->join('cart as c','c.product_variant_id','pv.product_id');
-        // ->where('c.user_id',$user_id)
-        // ->where('c.qty','!=',0);
+        ->join('cart as c','c.product_variant_id','p.id')
+        ->where('c.is_saved_for_later',$is_saved_for_later)
+        ->where('c.user_id',$user_id)
+        ->where('c.qty','!=',0);
     
         if (!empty($product_variant_id)) {
-            $q=$q->where('c.product_variant_id', $product_variant_id);
+            $q=$q->where('c.product_variant_id', $product_variant_id)
+            ->where('p.id',$product_variant_id);
         }
         $res =  $q->select(
-            'p.id',
+            
             'c.user_id',
-            'pv.product_id as product_variant_id',
+            'c.product_variant_id',
             'p.name',
             'c.qty',
             'c.is_saved_for_later',
@@ -321,23 +326,29 @@ class Cart extends Model
             'p.sale_price as special_price',
             'p.content as description',
 
-        )->orderBy('c.id', 'DESC')->get()->toarray();
-
-
-        
-
+        )->orderBy('c.id', 'DESC')->get()->toArray();
+       
         if (!empty($res)) {
 
-            $res = array_map(function ($d) {    
-                $d->minimum_order_quantity =  1;
-                $d->quantity_step_size=   1;
-                $d->total_allowed_quantity = '';
-                $d->product_variants= Ec_product::getVariants($d->id,$d->product_variant_id);
+            $res = array_map(function ($d) {   
+                $d=(array)$d;
+               $d['product_variant_id']= (string) $d['product_variant_id'];
+               $d['user_id']=(string) $d['user_id'];
+               $d['qty']= (string)$d['qty'];
+               $d['is_saved_for_later']= (string)$d['is_saved_for_later'];      
+               $d['price']=(string)$d['price'];
+               $d['special_price']=(string) $d['special_price'];
+               $d['id']=(string)Fun::get_product_id($d['product_variant_id']); 
+               $d['minimum_order_quantity']= (string)1;
+               $d['quantity_step_size']= (string)1;
+               $d['total_allowed_quantity'] = '';
+               $d['product_variants']= Ec_product::getVariants($d['id'],$d['product_variant_id']);
                 return $d;
             }, $res);
         }
-        
+       
         return $res;
+      
     }
     
    
