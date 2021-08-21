@@ -325,7 +325,7 @@ public static function get_products_By_ids($products_ids,$user_id=null){
 
          $variants=$variants->get();
       
-        if($variants=="[]"){
+        if($variants=="[]"&&$id!=null){
             
              $variants=  DB::table('ec_products as p')->where('p.id',$id)->select('p.*')->get();
         }

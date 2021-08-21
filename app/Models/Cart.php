@@ -43,13 +43,10 @@ class Cart extends Model
         $check_current_stock_status = Cart::validate_stock($product_variant_id, $qty);
        
         if (!empty($check_current_stock_status) && $check_current_stock_status['error'] == true) {
-            // $check_current_stock_status['csrfName'] = $this->security->get_csrf_token_name();
-            // $check_current_stock_status['csrfHash'] = $this->security->get_csrf_hash();
-           // return response()->json($check_current_stock_status);
-           // json_decode($check_current_stock_status));
-           // dd($check_current_stock_status);
-             true;
-            
+             $check_current_stock_status['csrfName'] = null;
+             $check_current_stock_status['csrfHash'] = null;
+           print_r(json_encode($check_current_stock_status));
+           return true;   
         }
 
         for ($i = 0; $i < count($product_variant_id); $i++) {
@@ -153,7 +150,7 @@ class Cart extends Model
     'p.sale_price as special_price',
     'p.content as description',
     'p.images',
-    'p.is_variation',]
+    ]
 );
 
     if ($product_variant_id == true) {
@@ -188,12 +185,9 @@ class Cart extends Model
     $cod_allowed = 1;
 
     foreach ($data as $i => $value) {
-        
-        $data[$i]->minimum_order_quantity=1;
-        $data[$i]->antity_step_size=1;
-        $data[$i]->total_allowed_quantity=5;
+     
+      
         $data[$i]->tax_percentage=Cart::get_tax_percentage($value->id);
-
         //use to get first image in array it is defulte
         $product_images=json_decode( $data[$i]->images);
             $default_imag=null;
@@ -215,7 +209,7 @@ class Cart extends Model
             $cod_allowed = 0;
         
 
-        $variant_id[$i] = $data[$i]->id;
+        $variant_id[$i] =(string) $data[$i]->id;
         $quantity[$i] = intval($data[$i]->qty);
         if (floatval($data[$i]->special_price) > 0) {
             $total[$i] = floatval($data[$i]->special_price + $special_price_tax_amount) * $data[$i]->qty;
@@ -237,7 +231,7 @@ class Cart extends Model
        // $data[$i]->product_variants= get_variants_values_by_id($data[$i]->id);
     }
     $total = array_sum($total);
-
+   
     // if (!empty($address_id)) {
     //     $delivery_charge = get_delivery_charge($address_id, $total);
     // }
@@ -266,23 +260,27 @@ class Cart extends Model
         ->select('tax.percentage')
         ->where('p.id',$id)
         ->get()->toarray();
+       
+        // if(isset($res[0]->percentage)&&$res[0]->percentage==null){
+           
+        //     $res=DB::table('ec_products as p')
 
-        if($res[0]->percentage==null){
-            $res=DB::table('ec_products as p')
+        // ->leftJoin('ec_product_variations as pv','pv.configurable_product_id','=','p.id')   
+        // ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
+        // ->select('tax.percentage')
+        // ->where('pv.product_id',$id)
+        // ->get()->toarray();
 
-        ->leftJoin('ec_product_variations as pv','pv.configurable_product_id','=','p.id')   
-        ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
-        ->select('tax.percentage')
-        ->where('pv.product_id',$id)
-        ->get()->toarray();
+        // }
+      
 
-        }
-        if($res[0]->percentage==null)
+        if(isset($res[0]->percentage)&&$res[0]->percentage!=null)
         {
-            return 0;
+        
+            return $res[0]->percentage; 
         }
         else
-        return $res[0]->percentage;
+        return 0;
     }
    public static function remove_from_cart($data)
     {
@@ -320,6 +318,7 @@ class Cart extends Model
             'c.qty',
             'c.is_saved_for_later',
             'c.created_at as date_created',
+            'images as image', 
             'p.sku as slug',
             'p.description as short_description',
             'p.price',
@@ -327,22 +326,32 @@ class Cart extends Model
             'p.content as description',
 
         )->orderBy('c.id', 'DESC')->get()->toArray();
-       
+    
+
         if (!empty($res)) {
 
             $res = array_map(function ($d) {   
+                //use to get first image url in array 
+                $product_images=json_decode($d->image);
+                $default_imag=null;
+                if(!empty($product_images))
+                $default_imag=$product_images[0];
+
                 $d=(array)$d;
                $d['product_variant_id']= (string) $d['product_variant_id'];
                $d['user_id']=(string) $d['user_id'];
                $d['qty']= (string)$d['qty'];
                $d['is_saved_for_later']= (string)$d['is_saved_for_later'];      
-               $d['price']=(string)$d['price'];
-               $d['special_price']=(string) $d['special_price'];
+              
+               $d['special_price']= ($d['special_price']!="")?$d['special_price']:0; 
                $d['id']=(string)Fun::get_product_id($d['product_variant_id']); 
+               $d['is_prices_inclusive_tax']="0";
+               $d['image']= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
                $d['minimum_order_quantity']= (string)1;
                $d['quantity_step_size']= (string)1;
                $d['total_allowed_quantity'] = '';
-               $d['product_variants']= Ec_product::getVariants($d['id'],$d['product_variant_id']);
+               $d['tax_percentage']=(string)Cart::get_tax_percentage($d['id']);
+               $d['product_variants']= Ec_product::getVariants(null,$d['product_variant_id']);
                 return $d;
             }, $res);
         }

@@ -53,7 +53,7 @@ class CartController extends Controller
                 $this->response['message'] = 'Cart Updated !';
 
                 $this->response['data'] = [
-                    'total_quantity' => ($_POST['qty'] == 0) ? '0' : strval($_POST['qty']),
+                    'total_quantity' => ($request->qty== 0) ? '0' : strval($request->qty),
                     'sub_total' => strval($response['sub_total']),
                     'total_items' => (isset($response[0]->total_items)) ? strval($response[0]->total_items) : "0",
                     'tax_percentage' => (isset($response['tax_percentage'])) ? strval($response['tax_percentage']) : "0",
