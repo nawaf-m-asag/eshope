@@ -40,14 +40,6 @@ class Cart extends Model
         $product_variant_id = explode(',', $data->product_variant_id);
         $qty = explode(',', $data->qty);
 
-        $check_current_stock_status = Cart::validate_stock($product_variant_id, $qty);
-       
-        if (!empty($check_current_stock_status) && $check_current_stock_status['error'] == true) {
-             $check_current_stock_status['csrfName'] = null;
-             $check_current_stock_status['csrfHash'] = null;
-           print_r(json_encode($check_current_stock_status));
-           return true;   
-        }
 
         for ($i = 0; $i < count($product_variant_id); $i++) {
             $cart_data = [

@@ -46,7 +46,22 @@ class CartController extends Controller
                     
                 }
             }
-            if (!Cart::add_to_cart($request)) {
+
+
+        $product_variant_id = explode(',', $request->product_variant_id);
+        $qty = explode(',', $request->qty);
+    
+        $check_current_stock_status = Cart::validate_stock($product_variant_id, $qty);
+           
+        if (!empty($check_current_stock_status) && $check_current_stock_status['error'] == true) {
+            $CSRFToken = csrf_token();
+                 $check_current_stock_status['csrfName'] = null;
+                 $check_current_stock_status['csrfHash'] = $CSRFToken;
+                 
+                return response()->json($check_current_stock_status);
+      }
+
+    if (!Cart::add_to_cart($request)) {
 
                 $response = Cart::get_cart_total($request->user_id, false);
                 $this->response['error'] = false;
