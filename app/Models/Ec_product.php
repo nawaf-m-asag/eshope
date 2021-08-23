@@ -320,16 +320,18 @@ public static function get_products_By_ids($products_ids,$user_id=null){
         ->where('pv.configurable_product_id',$id)
         ->where('p.status','published')
         ->select('p.*');
+
         if($variants_id!=null)
         $variants=$variants->where('pv.product_id',$variants_id);
 
          $variants=$variants->get();
-      
+       
         if($variants=="[]"&&$id!=null){
             
              $variants=  DB::table('ec_products as p')->where('p.id',$id)->select('p.*')->get();
         }
-        
+      
+       
              $variants_data=[];
         foreach ($variants as $key => $value) {
 

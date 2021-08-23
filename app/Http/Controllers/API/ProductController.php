@@ -29,7 +29,7 @@ class ProductController extends Controller
 
         if ($validator->fails()){
             $this->response['error'] = true;
-            $this->response['message'] ="Something is wrong";
+            $this->response['message'] =$validator->errors()->first();
             $this->response['data'] = array();
             return response()->json($this->response);
             

@@ -30,6 +30,7 @@
     Route::post('manage_cart',App\Http\Controllers\API\CartController::class . '@addToCart');
     Route::post('remove_from_cart',App\Http\Controllers\API\CartController::class . '@removeFromCart');
     Route::post('get_user_cart',App\Http\Controllers\API\CartController::class . '@_getCart');
+    Route::post('place_order',App\Http\Controllers\API\OrderController::class . '@placeOrder');
 
     
     
