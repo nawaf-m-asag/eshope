@@ -8,7 +8,26 @@ class Fun extends Model
 {
 
   
-
+    public static function output_escaping($array)
+    {
+        if (!empty($array)) {
+            if (is_array($array)) {
+                $data = array();
+                foreach ($array as $key => $value) {
+                    $data[$key] = stripcslashes($value);//use to clear text from slashes Ex:hello / world => hello world 
+                }
+                return $data;
+            } else if (is_object($array)) {
+                $data =[];
+                foreach ($array as $key => $value) {
+                    $data[$key] = stripcslashes($value);
+                }
+                return $data;
+            } else {
+                return stripcslashes($array);
+            }
+        }
+    }
    public static function fetch_details($where1=null,$where2 = NULL, $table, $fields = '*', $limit = '', $offset = '', $sort = '', $order = '')
     {
         
@@ -67,4 +86,18 @@ public static function delete_details($where1,$where2, $table)
         return $product_variant_id;
     }
     }
+public static function escape_array($array)
+{
+    $posts = array();
+    if (!empty($array)) {
+        if (is_array($array)) {
+            foreach ($array as $key => $value) {
+                $posts[$key] = escape_str($value);
+            }
+        } else {
+            return escape_str($array);
+        }
+    }
+    return $posts;
+}
 }

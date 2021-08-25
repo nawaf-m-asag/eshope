@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use App\Models\Ec_review;
 use App\Models\Ec_wish_list;
-
+use App\Models\Fun;
 use RvMedia;
 
 class Ec_product extends Model
@@ -211,7 +211,7 @@ public static function get_products_By_ids($products_ids,$user_id=null){
                     "category_id"=>"$value->category_id",
                     "short_description"=>$value->short_description,
                     "slug"=>$value->sku,
-                    "description"=>Ec_product::output_escaping($value->content),
+                    "description"=>Fun::output_escaping($value->content),
         /*static*/  "total_allowed_quantity"=>"1",
         /*static*/  "minimum_order_quantity"=>"1",
         /*static*/  "quantity_step_size"=>"1",
@@ -391,26 +391,7 @@ public static function getVariant_ids($id){
      return $json_opj;
     
     }
-   public static function output_escaping($array)
-{
-    if (!empty($array)) {
-        if (is_array($array)) {
-            $data = array();
-            foreach ($array as $key => $value) {
-                $data[$key] = stripcslashes($value);//use to clear text from slashes Ex:hello / world => hello world 
-            }
-            return $data;
-        } else if (is_object($array)) {
-            $data =[];
-            foreach ($array as $key => $value) {
-                $data->$key = stripcslashes($value);
-            }
-            return $data;
-        } else {
-            return stripcslashes($array);
-        }
-    }
-}
+ 
     public static function getMin_max_price($product_id='',$percentage=0){
 
         $response=  DB::table('ec_products as p')

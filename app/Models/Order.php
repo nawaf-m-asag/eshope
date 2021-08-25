@@ -44,6 +44,7 @@ class Order extends Model
            // $system_settings = get_settings('system_settings', true);
             $delivery_charge = (isset($data['delivery_charge'])) ? $data['delivery_charge'] : 0;
             $gross_total = 0;
+            $tax_amount_total=0;
             $cart_data = [];
             
             for ($i = 0; $i < count($product_variant); $i++) {
@@ -66,6 +67,7 @@ class Order extends Model
                     $tax_amount[$i] = 0;
                     $tax_percentage[$i] = 0;
                 }
+                $tax_amount_total+= $tax_amount[$i];
                 $gross_total += $subtotal[$i];
                 $total += $subtotal[$i];
                 $total = round($total, 2);
@@ -133,20 +135,18 @@ class Order extends Model
             $status = (isset($data['active_status'])) ? $data['active_status'] : 'received';
             $order_data = [
                 'user_id' => $data['user_id'],
-                'mobile' => $data['mobile'],
-                'total' => $gross_total,
-                'promo_discount' => (isset($promo_code_discount) && $promo_code_discount != NULL) ? $promo_code_discount : '0',
-                'total_payable' => $total_payable,
-                'delivery_charge' => $delivery_charge,
-                'is_delivery_charge_returnable' => $data['is_delivery_charge_returnable'],
-                'wallet_balance' => (isset($Wallet_used) && $Wallet_used == true) ? $data['wallet_balance_used'] : '0',
-                'final_total' => $final_total,
-                'discount' => '0',
-                'payment_method' => $data['payment_method'],
-                'status' =>  json_encode(array(array($status, date("d-m-Y h:i:sa")))),
-                'active_status' => $status,
-                'promo_code' => (isset($data['promo_code'])) ? $data['promo_code'] : ' '
+                'amount' => $final_total,
+                'tax_amount' => $tax_amount_total,
+                'sub_total'=>$total,
+                'currency_id'=>3,
+                'shipping_amount' => $delivery_charge,
+                'coupon_code' =>(isset($data['promo_code'])) ? $data['promo_code'] :'',
+                'discount_amount' =>(isset($promo_code_discount) && $promo_code_discount != NULL) ? $promo_code_discount : '0',
+                'payment_id' => '1',
             ];
+            DB::table('ec_orders')->insert( $order_data);
+
+            dd( $order_data);
             if (isset($data['address_id']) && !empty($data['address_id'])) {
                 $order_data['address_id'] = $data['address_id'];
             }

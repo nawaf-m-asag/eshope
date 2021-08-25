@@ -31,6 +31,10 @@
     Route::post('remove_from_cart',App\Http\Controllers\API\CartController::class . '@removeFromCart');
     Route::post('get_user_cart',App\Http\Controllers\API\CartController::class . '@_getCart');
     Route::post('place_order',App\Http\Controllers\API\OrderController::class . '@placeOrder');
+    Route::post('get_cities',App\Http\Controllers\API\CitiesController::class . '@getCities');
+    Route::post('get_areas_by_city_id',App\Http\Controllers\API\AreasController::class . '@getArea');
+    Route::post('add_address',App\Http\Controllers\API\AddressController::class . '@addNewAddress');
+    Route::post('delete_address',App\Http\Controllers\API\AddressController::class . '@deleteAddress');
 
     
     

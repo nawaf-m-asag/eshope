@@ -16,7 +16,7 @@ class Wish_listsController extends Controller
             $error=false;
             $filters=[];
             $validator = Validator::make($request->all(), [
-                'user_id'=>'nullable|required',    
+                'user_id'=>'required',    
                 'limit'=>'nullable|integer',
                 'offset'=>'nullable|integer',
               
