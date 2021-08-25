@@ -8,7 +8,7 @@ use App\Models\Fun;
 use Illuminate\Support\Facades\DB;
 class CitiesController extends Controller
 {
-    public function getArea(Request $request)
+    public function getCities(Request $request)
     {
         /*
             limit:10 {optional}

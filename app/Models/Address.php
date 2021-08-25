@@ -111,7 +111,7 @@ class Address extends Model
     {
         $where = [];
      
-           $query= DB::table('addresses as addr')->select('addr.*')
+           $query= DB::table('addresses as addr')->selectRaw('addr.*,a.name as area,a.minimum_free_delivery_order_amount,a.delivery_charges,c.name as city')
                // ->where($where)
                 ->join('cities as c', 'addr.city_id','=','c.id')
                 ->join('areas as a','addr.area_id','=','a.id')
@@ -134,6 +134,7 @@ class Address extends Model
                 $query->where('is_default', 1);
             }
             $res = $query->get()->toArray();
+      
             if (!empty($res)) {
                 for ($i = 0; $i < count($res); $i++) {
                     $res[$i] = Fun::output_escaping($res[$i]);

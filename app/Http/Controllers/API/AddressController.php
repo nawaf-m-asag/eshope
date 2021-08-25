@@ -36,6 +36,7 @@ class AddressController  extends Controller
         } else {
             Address::set_address($request);
             $res = Address::get_address($request->user_id, false, true);
+           
             $this->response['error'] = false;
             $this->response['message'] = 'Address Added Successfully';
             $this->response['data'] = $res;
