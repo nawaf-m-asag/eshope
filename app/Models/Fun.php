@@ -100,4 +100,22 @@ public static function escape_array($array)
     }
     return $posts;
 }
+public static function is_exist($where, $table, $update_id = null)
+{
+    
+    $where_tmp = [];
+    foreach ($where as $key => $val) {
+        $where_tmp[$key] = $val;
+    }
+  
+    if (($update_id == null)  ?DB::table($table)->where($where)->count() > 0 : DB::table($table)->where($where)->whereNotIn('id', $update_id)->count() > 0) {
+   
+        return true;
+    } else {
+       
+        return false;
+    }
+
+    }
+   
 }

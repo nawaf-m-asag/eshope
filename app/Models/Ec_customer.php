@@ -7,9 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Ec_customer extends Model
 {
 
-   public function Review()
-   {
-       return $this->belongsToMany('App\Models\Ec_review');
-   }
+   
+    protected $fillable = [      
+   
+        'country_code',  
+        'name',
+        'phone',    
+        'dob',
+        'email',
+        'confirmed_at',
+        'password'
+      
+    ];
+
+   
     
 }

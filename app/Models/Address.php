@@ -24,6 +24,7 @@ class Address extends Model
             'country',
             'latitude',    
             'latitude',
+            'is_default'
     ];
 
 

@@ -36,6 +36,11 @@
     Route::post('add_address',App\Http\Controllers\API\AddressController::class . '@addNewAddress');
     Route::post('delete_address',App\Http\Controllers\API\AddressController::class . '@deleteAddress');
 
+    //user
+    Route::post('verify_user',App\Http\Controllers\API\CustomerController::class . '@getVerifyUser');
+    Route::post('register_user',App\Http\Controllers\API\CustomerController::class . '@getRegisterUser');
+
+    
     
     
 
