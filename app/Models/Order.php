@@ -16,7 +16,7 @@ class Order extends Model
         // $CI->load->model('Address_model');
 
         $response = array();
-        $user = Fun::fetch_details('id' ,$data['user_id'],'ec_customers');
+        $user = Fun::fetch_details(['id'=>$data['user_id']],'ec_customers');
 
         $product_variant_id = explode(',', $data['product_variant_id']);
         $quantity = explode(',', $data['quantity']);

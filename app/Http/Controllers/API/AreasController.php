@@ -21,7 +21,7 @@ class AreasController  extends Controller
             $this->response['message'] = $validator->errors()->first();
         } 
         else{
-            $areas = Fun::fetch_details('city_id',$request->id,'areas');
+            $areas = Fun::fetch_details(['city_id'=>$request->id],'areas');
             if (!empty($areas)) {
                 for ($i = 0; $i < count($areas); $i++) {
                     $areas[$i] =Fun::output_escaping($areas[$i]);

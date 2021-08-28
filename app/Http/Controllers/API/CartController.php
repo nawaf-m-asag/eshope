@@ -152,7 +152,7 @@ class CartController extends Controller
         
             if (!empty($tmp_cart_user_data)) {
                 for ($i = 0; $i < count($tmp_cart_user_data); $i++) {
-                    $product_data =Fun::fetch_details('id',$tmp_cart_user_data[$i]['product_variant_id'], 'ec_products','id,status');
+                    $product_data =Fun::fetch_details(['id'=>$tmp_cart_user_data[$i]['product_variant_id']],'ec_products','id,status');
                      
                     if (!empty($product_data[0]->id)) {
                         $pro_details = Ec_product::fetch_product_json_data($user_id, null, $tmp_cart_user_data[$i]['id']);

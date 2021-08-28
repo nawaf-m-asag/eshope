@@ -92,7 +92,7 @@ class Address extends Model
 
         if (isset($data['id']) && !empty($data['id'])) {
             if (isset($data['is_default']) && $data['is_default'] == true) {
-                $address = Fun::fetch_details('id', $data['id'], 'addresses','*');
+                $address = Fun::fetch_details(['id'=>$data['id']], 'addresses','*');
                 DB::table('addresses')->where('user_id', $address[0]->user_id)->update(['is_default' => '0']);
                 DB::table('addresses')->where('id', $data['id'])->update(['is_default' => '1']);
             }

@@ -28,12 +28,12 @@ class Fun extends Model
             }
         }
     }
-   public static function fetch_details($where1=null,$where2 = NULL, $table, $fields = '*', $limit = '', $offset = '', $sort = '', $order = '')
+   public static function fetch_details($where= NULL, $table, $fields = '*', $limit = '', $offset = '', $sort = '', $order = '')
     {
         
         $query=DB::table($table)->selectRaw($fields);
-        if (!empty($where1)&&!empty($where2)){
-            $query=$query->where($where1,$where2);
+        if (!empty($where)){
+            $query=$query->where($where);
         }
     
         if (!empty($limit)) {

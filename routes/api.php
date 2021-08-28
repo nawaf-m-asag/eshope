@@ -39,6 +39,7 @@
     //user
     Route::post('verify_user',App\Http\Controllers\API\CustomerController::class . '@getVerifyUser');
     Route::post('register_user',App\Http\Controllers\API\CustomerController::class . '@getRegisterUser');
+    Route::post('update_user',App\Http\Controllers\API\CustomerController::class . '@update_user');
 
     
     
