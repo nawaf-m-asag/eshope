@@ -23,6 +23,7 @@ class Ec_product extends Model
              $query->on('c.id','=', DB::raw('(SELECT cp2.category_id FROM ec_product_category_product as cp2 WHERE p.id = cp2.product_id LIMIT 1)')); //تم استخدام هذا الشرط لحل مشكلة التكرار بسبب علاقة many to many بين الاصناف والمنتجات         
         })
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
+        
         ->select([DB::raw('DISTINCT(p.id)'),
         DB::raw('(SELECT COUNT(er.star) FROM ec_reviews as er WHERE p.id = er.product_id) as no_of_ratings'),//get COUNT star for use in order
         DB::raw('(SELECT SUM(er.star) FROM ec_reviews as er WHERE p.id = er.product_id) as rating'),//get sum star for use in order 
@@ -39,9 +40,34 @@ class Ec_product extends Model
         'p.content',
         'p.images',
         'tax.percentage',
-        'p.is_variation',]
+        'p.is_variation',
+        ]
     );
     
+        /* || filter product by search  ||*/
+        if (isset($filter)) {
+           
+            $query->join('ec_product_tag_product as ptp','ptp.product_id','=', 'p.id')
+                
+            ->leftJoin('ec_product_tags as pt', 'pt.id','=','ptp.tag_id')->addSelect('pt.name');
+            
+            
+            $tags= explode(" ", $filter['search']);
+            //search string to array Ex: "hello world" to be =>array(hello,world)
+            if(!empty($filter['search'])){
+               $query->whereIn('pt.name',$tags);       
+               $query->orWhere('p.name', 'like','%'.trim($filter['search']).'%');
+               $products['search']=$filter['search'];
+            }   
+               /* || filter product by tags name ||*/
+            if (!empty($filter['tags'])) {
+                $tags= explode(" ", $filter['tags']);
+                $query->whereIn('pt.name',$tags); 
+               
+            } 
+
+         }         
+
     
        if ($sort == 'pv.price' && !empty($sort) && $sort != NULL) {
         $products=$query->orderBy('p.price',$order);
@@ -66,39 +92,7 @@ class Ec_product extends Model
         }
 
 
-          /* || filter product by search  ||*/
-        if (isset($filter) && !empty($filter['search'])) {
-           
-            $products=$query->join('ec_product_tag_product as ptp',function($query){
-                $query->on('ptp.product_id', '=', 'p.id');
-                $query->Join('ec_product_tags as pt', 'pt.id','=','ptp.tag_id')->addSelect('pt.name');
-            });
-            
-            
-            $tags= explode(" ", $filter['search']);
-            //search string to array Ex: "hello world" to be =>array(hello,world)
-            
-            $products=$query->where(function($query) use ($tags,$filter){
-                //if not found the result in tags search for at in product name 
-                foreach ($tags as $tag) {
-                    
-                    $query->where('pt.name', 'like','%'.trim($tag).'%');       
-                }
-                     $query->orwhere('p.name', 'like','%'.trim($filter['search']).'%');
-                     
-            });
-            
-         }         
-
-        
-             /* || filter product by tags name ||*/
-            if (isset($filter) && !empty($filter['tags'])) {
-                $tags = explode(",", $filter['tags']);
-                foreach ($tags as $i => $tag) {
-                $products=$query->where('pt.name', 'like', '%'.trim($tag).'%');
-            }
-           
-        }
+      
         if (isset($filter) && !empty($filter['product_type']) && strtolower($filter['product_type']) == 'products_on_sale') {
             $products=$query->where('p.price','>=',0);
         }
@@ -141,14 +135,13 @@ class Ec_product extends Model
         }
         if (isset($filter) && !empty($filter['attribute_value_ids'])) {
 
-            
             $str = explode(",",$filter['attribute_value_ids']);   // Ids should be in array and comma deleted EX: "1,2,3" => array(1,2,3)
-           
-          
             $products=$query
             ->join('ec_product_variations as pv','pv.configurable_product_id','=','p.id')
             ->join('ec_product_variation_items as pvi','pvi.variation_id','=','pv.id')
             ->whereIn('pvi.attribute_id', $str);
+
+           // dd();
             
         }
     
@@ -157,8 +150,10 @@ class Ec_product extends Model
         
      
       $products=$query->where("p.status","published")->where("p.is_variation",0)->get();
-   
-        return Ec_product::get_products_By_ids($products,$user_id);
+      
+        $products= Ec_product::get_products_By_ids($products,$user_id);
+        $products['search']=(isset($filter['search']) && !empty($filter['search'])) ? $filter['search'] :null;
+        return  $products;
     }
 
 
@@ -249,7 +244,6 @@ public static function get_products_By_ids($products_ids,$user_id=null){
             }
          
             $products['filters']=Ec_product::get_filter($products_ids);
-            $products['search']=(isset($filter['search']) && !empty($filter['search'])) ? $filter['search'] :null;
             $products['product']=$data;
             $products['total']=$total;  
 

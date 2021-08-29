@@ -51,12 +51,12 @@ class Fun extends Model
         $res =  $query->get()->toarray();
         return $res;
     }
-    public static function update_details($set, $where1,$where2, $table, $escape = true)
+    public static function update_details($set,$where, $table, $escape = true)
 {
     
    
 
-    $query=DB::table($table)->where($where1,$where2)->update($set);
+    $query=DB::table($table)->where($where)->update($set);
   
     $response = FALSE;
     if ($query) {
@@ -108,8 +108,8 @@ public static function is_exist($where, $table, $update_id = null)
         $where_tmp[$key] = $val;
     }
   
-    if (($update_id == null)  ?DB::table($table)->where($where)->count() > 0 : DB::table($table)->where($where)->whereNotIn('id', $update_id)->count() > 0) {
-   
+    if ($update_id == null ?DB::table($table)->where($where)->count() > 0 : DB::table($table)->where($where)->whereNotIn('id', $update_id)->count() > 0) {
+
         return true;
     } else {
        

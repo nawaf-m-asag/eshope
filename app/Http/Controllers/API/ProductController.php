@@ -14,7 +14,7 @@ class ProductController extends Controller
         $filters=[];
         $validator = Validator::make($request->all(), [
             'id'=>'nullable|integer',    
-            'search'=>'nullable|string',
+            'search'=>'nullable',
             'category_id'=>'nullable|integer',
             'attribute_value_ids'=>'nullable|string',
             'sort'=>'nullable|string',
