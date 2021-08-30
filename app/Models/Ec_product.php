@@ -200,7 +200,7 @@ public static function get_products_By_ids($products_ids,$user_id=null){
                     'id'=>"$value->id",
                     'attr_value_ids'=>Ec_product::attr_value_ids($value->id),
                     'name'=>$value->product_name,
-        /*static*/  'is_prices_inclusive_tax'=>"0",
+        /*static*/  'is_prices_inclusive_tax'=>"1",
                     'type'=>$type,
                     "stock"=>"$value->quantity",
                     "category_id"=>"$value->category_id",
@@ -228,7 +228,7 @@ public static function get_products_By_ids($products_ids,$user_id=null){
         /*static*/  "made_in"=>null,
         /*static*/  "availability"=>"1",
                     "category_name"=>$value->category_name,
-                    "tax_percentage"=>"$value->percentage",
+                    "tax_percentage"=>strval(round($value->percentage)),
         /*static*/  "review_images"=>Ec_review::get_review_images($value->id),
                     "attributes"=> $attributes,
                     "variants"=>Ec_product::getVariants($value->id),
@@ -442,7 +442,7 @@ public static function getVariant_ids($id){
         ->join('ec_product_attributes as pa','pa.id','=','pvi.attribute_id')
         ->join('ec_product_attribute_sets as pas','pas.id','=','pa.attribute_set_id')->distinct('p.id')
         ->selectRaw('DISTINCT(pa.id) as ids')
-         ->groupBy('pa.id',)
+         ->groupBy('pa.id')
          ->where('pv.configurable_product_id',$id)->get();
 
        foreach ($attributes as $key => $value) {

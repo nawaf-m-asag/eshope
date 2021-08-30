@@ -65,10 +65,10 @@ class Fun extends Model
     return $response;
 }
    
-public static function delete_details($where1,$where2, $table)
+public static function delete_details($where, $table)
 {
     
-    if (DB::table($table)->where($where1,$where2)->delete()) {
+    if (DB::table($table)->where($where)->delete()) {
         return true;
     } else {
         return false;

@@ -159,7 +159,7 @@ class CartController extends Controller
                      
                         if (!empty($pro_details['product'])) {
                             if (trim($pro_details['product'][0]['availability']) == 0 && $pro_details['product'][0]['availability'] != null) {
-                                Fun::update_details(['is_saved_for_later' => '1'],'product_variant_id' ,$cart_user_data[$i]['product_variant_id'], 'cart');
+                                Fun::update_details(['is_saved_for_later' => '1'],['product_variant_id'=>$cart_user_data[$i]['product_variant_id']], 'cart');
                                 unset($cart_user_data[$i]);
                             }
 
@@ -168,17 +168,17 @@ class CartController extends Controller
                                 $cart_user_data[$i]['product_details']= $pro_details['product'];
                             } else {
                              
-                                Fun::delete_details('id',$cart_user_data[$i]['product_variant_id'], 'cart');
+                                Fun::delete_details(['id'=>$cart_user_data[$i]['product_variant_id']], 'cart');
                                 unset($cart_user_data[$i]);
                                 continue;
                             }
                         } else {
-                            Fun::delete_details('id',$cart_user_data[$i]['product_variant_id'], 'cart');
+                            Fun::delete_details(['id'=>$cart_user_data[$i]['product_variant_id']], 'cart');
                             unset($cart_user_data[$i]);
                             continue;
                         }
                     } else {
-                        Fun::delete_details('id',$cart_user_data[$i]['product_variant_id'], 'cart');
+                        Fun::delete_details(['id'=>$cart_user_data[$i]['product_variant_id']], 'cart');
                         unset($cart_user_data[$i]);
                         continue;
                     }

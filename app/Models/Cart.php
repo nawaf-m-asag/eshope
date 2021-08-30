@@ -164,7 +164,7 @@ class Cart extends Model
    
     $query=$query->orderBy('cart.id', "DESC");
     
-    $data = $query->get()->toarray();
+    $data = $query->get()->toArray();
  
    
   
@@ -180,6 +180,8 @@ class Cart extends Model
      
       
         $data[$i]->tax_percentage=Cart::get_tax_percentage($value->id);
+      
+      //  dd( $data[$i]->tax_percentage);
         //use to get first image in array it is defulte
         $product_images=json_decode( $data[$i]->images);
             $default_imag=null;
@@ -188,7 +190,7 @@ class Cart extends Model
 
 
         $prctg = (isset($data[$i]->tax_percentage) && intval($data[$i]->tax_percentage) > 0 && $data[$i]->tax_percentage != null) ? $data[$i]->tax_percentage : '0';
-       
+      
         $price_tax_amount = $data[$i]->price * ($prctg / 100);
         $special_price_tax_amount = $data[$i]->special_price* ($prctg / 100);
         
@@ -213,8 +215,10 @@ class Cart extends Model
         $data[$i]->price= $data[$i]->price+ $price_tax_amount;
 
         $percentage[$i] = (isset($data[$i]->tax_percentage) && floatval($data[$i]->tax_percentage) > 0) ? $data[$i]->tax_percentage: 0;
+      
         if ($percentage[$i] != NUll && $percentage[$i] > 0) {
             $amount[$i] = round($total[$i] *  $percentage[$i] / 100, 2);
+          
         } else {
             $amount[$i] = 0;
             $percentage[$i] = 0;
@@ -240,7 +244,7 @@ class Cart extends Model
     $data['tax_amount'] = strval(array_sum($amount));
     $data['total_arr'] = $total;
     $data['variant_id'] = $variant_id;
-    $data['delivery_charge'] = "0";
+    $data['delivery_charge'] ="0";
     $data['overall_amount'] = strval($overall_amt);
     $data['amount_inclusive_tax'] = strval($overall_amt + $tax_amount);
     return $data;
@@ -251,19 +255,19 @@ class Cart extends Model
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
         ->select('tax.percentage')
         ->where('p.id',$id)
-        ->get()->toarray();
-       
-        // if(isset($res[0]->percentage)&&$res[0]->percentage==null){
+        ->get()->toArray();
+      
+        if(isset($res[0]) && $res[0]->percentage==null){
            
-        //     $res=DB::table('ec_products as p')
+            $res=DB::table('ec_products as p')
+            
+        ->leftJoin('ec_product_variations as pv','pv.configurable_product_id','=','p.id')   
+        ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
+        ->select('tax.percentage')
+        ->where('pv.product_id',$id)
+        ->get()->toArray();
 
-        // ->leftJoin('ec_product_variations as pv','pv.configurable_product_id','=','p.id')   
-        // ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
-        // ->select('tax.percentage')
-        // ->where('pv.product_id',$id)
-        // ->get()->toarray();
-
-        // }
+        }
       
 
         if(isset($res[0]->percentage)&&$res[0]->percentage!=null)
@@ -342,7 +346,7 @@ class Cart extends Model
                $d['minimum_order_quantity']= (string)1;
                $d['quantity_step_size']= (string)1;
                $d['total_allowed_quantity'] = '';
-               $d['tax_percentage']=(string)Cart::get_tax_percentage($d['id']);
+               $d['tax_percentage']=(string) Cart::get_tax_percentage($d['id']);
                $d['product_variants']= Ec_product::getVariants(null,$d['product_variant_id']);
                 return $d;
             }, $res);
