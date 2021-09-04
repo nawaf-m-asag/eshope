@@ -14,6 +14,7 @@ class Notification extends Model
         $count_res = Notification::selectRaw(' COUNT(id) as `total` ')->get()->toArray();
         $search_res =Notification::selectRaw(' * ')->orderBy($sort, $order)->limit($limit)->offset($offset)->get()->toArray();
         for ($i = 0; $i < count($search_res); $i++) {
+            $search_res[$i]['id']= strval($search_res[$i]['id']);
             $search_res[$i]['title'] = Fun::output_escaping($search_res[$i]['title']);
             $search_res[$i]['message'] = Fun::output_escaping($search_res[$i]['message']);
             if (empty($search_res[$i]['image'])) {

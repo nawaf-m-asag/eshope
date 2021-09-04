@@ -13,13 +13,14 @@
 
 
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ApiController;
+use App\Http\Controllers\ProductController;
 
 
-    Route::post('get_categories',App\Http\Controllers\API\CategoryController::class . '@getCat');
-    Route::post('get_product_rating',App\Http\Controllers\API\ReviewsController::class . '@getReview');
-    Route::post('get_faqs',App\Http\Controllers\API\FaqsController::class . '@getFaqs');
-    Route::post('add_to_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_setFav');
-    Route::post('remove_from_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_removeFav');
+Route::group(['middleware' => ['jwt.verify']], function() {
+  
     Route::post('get_products',App\Http\Controllers\API\ProductController::class . '@getProduct');
     Route::post('get_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_getFav');
     Route::post('set_product_rating',App\Http\Controllers\API\ReviewsController::class . '@setRating');
@@ -35,17 +36,30 @@
     Route::post('get_areas_by_city_id',App\Http\Controllers\API\AreasController::class . '@getArea');
     Route::post('add_address',App\Http\Controllers\API\AddressController::class . '@addNewAddress');
     Route::post('delete_address',App\Http\Controllers\API\AddressController::class . '@deleteAddress');
+    Route::post('get_faqs',App\Http\Controllers\API\FaqsController::class . '@getFaqs');
+});
+Route::post('get_categories',App\Http\Controllers\API\CategoryController::class . '@getCat');
+Route::post('get_product_rating',App\Http\Controllers\API\ReviewsController::class . '@getReview');
 
+Route::post('add_to_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_setFav');
+Route::post('remove_from_favorites',App\Http\Controllers\API\Wish_listsController::class . '@_removeFav');
     //user
     Route::post('verify_user',App\Http\Controllers\API\CustomerController::class . '@getVerifyUser');
     Route::post('register_user',App\Http\Controllers\API\CustomerController::class . '@getRegisterUser');
     Route::post('update_user',App\Http\Controllers\API\CustomerController::class . '@update_user');
+    Route::post('reset_password',App\Http\Controllers\API\CustomerController::class . '@reset_password');
     //get_notifications
     Route::post('get_notifications',App\Http\Controllers\API\NotificationsController::class . '@getNotification');
 
+Route::post('login',App\Http\Controllers\API\CustomerController::class . '@getLoginUser');
+Route::post('get_setting',App\Http\Controllers\API\SettingsController::class . '@getSetting');
+
+
+
+
+   
     
-    
-    
+   
 
 
     

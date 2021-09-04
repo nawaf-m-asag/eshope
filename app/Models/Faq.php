@@ -3,10 +3,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use JWTAuth;
+use  App\Models\Fun;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Validator;
 class Faq extends Model
 {
 
+
+    public function __construct()
+    {
+      
+    }
+   
     public static  function get_faqs_json_data($faqs)
    {
 

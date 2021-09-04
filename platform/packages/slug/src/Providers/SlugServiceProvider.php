@@ -65,6 +65,16 @@ class SlugServiceProvider extends ServiceProvider
                     'icon'        => null,
                     'url'         => route('slug.settings'),
                     'permissions' => ['setting.options'],
+                ])
+                ->registerItem([
+                    'id'          => 'cms-packages-slug-app',
+                    'priority'    => 58,
+                    'parent_id'   => null,
+                    'name'        => 'hhhh',
+                    'icon'        => null,
+                    'url'         => '#',
+                    'permissions' => [],
+                    'active'      => true,
                 ]);
         });
 

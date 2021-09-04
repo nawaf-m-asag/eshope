@@ -4,9 +4,14 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Faq;
-
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Validator;
 class FaqsController extends Controller
 {
+
+
     public function getFaqs(Request $request)
     {
         $faqs= Faq::where("status","published")->orderBy("id","desc")->get();
@@ -32,4 +37,6 @@ class FaqsController extends Controller
                 ], 200);
 
     }   
+ 
+   
 }

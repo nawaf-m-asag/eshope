@@ -45,10 +45,10 @@ class Fun extends Model
         }
     
         if (!empty($order) && !empty($sort)) {
-            $query=$query->order_by($sort, $order);
+            $query=$query->orderBy($sort, $order);
         }
     
-        $res =  $query->get()->toarray();
+        $res =  $query->get()->toArray();
         return $res;
     }
     public static function update_details($set,$where, $table, $escape = true)
@@ -117,5 +117,28 @@ public static function is_exist($where, $table, $update_id = null)
     }
 
     }
+
+
+
+
+
+    public static function reset_password($identity, $new) {
+	
+		
+
+        if($res =DB::table('ec_customers')->where('phone',$identity)->update(['password'=>bcrypt($new)]))
+        {
+            return true;
+        }
+        return false;
+		
+	}
+
+
+
+
+
+
+
    
 }

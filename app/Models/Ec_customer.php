@@ -9,6 +9,7 @@ use RvMedia;
 class Ec_customer extends Model
 {
 
+    const MAX_PASSWORD_SIZE_BYTES = 4096;
    
     protected $fillable = [      
    
@@ -45,18 +46,22 @@ class Ec_customer extends Model
          }
         return false;
     }
-    public static function get_customer_data_by_id($customer_id)
+    public static function get_customer_data_by_id($customer_id=null,$phone=null)
     {
-
-        $user_details =DB::table('ec_customers as ec')->selectRaw('ec.id,ec.ip_address,ec.name as username,ec.email,ec.phone as mobile,ec.avatar as image,ec.balance,ec.activation_selector,ec.activation_code,ec.forgotten_password_selector,ec.forgotten_password_code,ec.forgotten_password_time,ec.remember_selector,ec.remember_code,ec.created_on,ec.last_login,ec.active,ec.company,ec.address,ec.bonus,ec.dob,ec.country_code,c.name as city_name,a.name as area_name,ec.street,ec.pincode,ec.apikey,ec.referral_code,ec.friends_code,ec.fcm_id,ec.latitude,ec.longitude,ec.created_at')
-        ->where('ec.id',$customer_id)
-        ->leftJoin('cities as c', 'c.id','=','ec.city')
+        $user_details =DB::table('ec_customers as ec')->selectRaw('ec.id,ec.ip_address,ec.name as username,ec.email,ec.phone as mobile,ec.avatar as image,ec.balance,ec.activation_selector,ec.activation_code,ec.forgotten_password_selector,ec.forgotten_password_code,ec.forgotten_password_time,ec.remember_selector,ec.remember_code,ec.created_on,ec.last_login,ec.active,ec.company,ec.address,ec.bonus,ec.dob,ec.country_code,c.name as city_name,a.name as area_name,ec.street,ec.pincode,ec.apikey,ec.referral_code,ec.friends_code,ec.fcm_id,ec.latitude,ec.longitude,ec.created_at');
+        if($customer_id!=null)
+        $user_details->where('ec.id',$customer_id);
+        if($phone!=null)
+        $user_details->where('ec.phone',$phone);
+		$user_details=$user_details->leftJoin('cities as c', 'c.id','=','ec.city')
         ->leftJoin('areas as a', 'a.id','=','ec.area')
-        ->get();
-        $user_details[0]->image = RvMedia::getImageUrl($user_details[0]->image,null, false, RvMedia::getDefaultImage());
-        $user_details[0]->image_sm= RvMedia::getImageUrl($user_details[0]->image,'small', false, RvMedia::getDefaultImage());
-        return $user_details;
+		->get();
 
+		if(isset($user_details[0])){
+			$user_details[0]->image = RvMedia::getImageUrl($user_details[0]->image,null, false, RvMedia::getDefaultImage());
+			$user_details[0]->image_sm= RvMedia::getImageUrl($user_details[0]->image,'small', false, RvMedia::getDefaultImage());
+		}
+        return $user_details;
     }
    
 
@@ -74,27 +79,34 @@ class Ec_customer extends Model
         return request()->ip(); // it will return server ip when no client ip found
     }
 
-    protected function _set_password_db($identity, $password)
+    public static function login($identity ,$now_password, $remember=FALSE)
 	{
-		$hash = $this->hash_password($password, $identity);
-
-		if ($hash === FALSE)
+		
+		
+		if (empty($identity) || empty($now_password))
 		{
 			return FALSE;
+		}	
+		else{
+			
+			$rse=Ec_customer::select('password')->where('phone',$identity)->get();
+			if(isset($rse[0])){
+
+					if(Hash::check($now_password,$rse[0]->password,)){
+					
+						return TRUE;
+					}
+					else{
+						
+						return FALSE;
+					}
+			}
+			else{
+					return FALSE;
+			}	
 		}
+		
 
-		// When setting a new password, invalidate any other token
-		$data = [
-			'password' =>bcrypt($password),
-			'remember_code' => NULL,
-			'forgotten_password_code' => NULL,
-			'forgotten_password_time' => NULL
-		];
-
-		$this->trigger_events('extra_where');
-
-		$this->db->update($this->tables['login_users'], $data, [$this->identity_column => $identity]);
-
-		return $this->db->affected_rows() == 1;
 	}
+   
 }

@@ -309,17 +309,17 @@ class CustomerController extends Controller
         if ($validator->fails()) {
             $this->response['error'] = true;
             $this->response['message'] = $validator->errors()->first();
-            return response()->json($response);
+            return response()->json($this->response);
         }
 
-        $identity_column = $this->config->item('identity', 'ion_auth');
         $res = Fun::fetch_details(['phone' => $request->mobile_no], 'ec_customers');
         if (!empty($res)) {
           
-            if (!Fun::reset_password('phone', $request->new)) {
+            if (!Fun::reset_password($request->mobile_no, $request->new)) {
                 $response['error'] = true;
-                $response['message'] = strip_tags($this->ion_auth->messages());;
+                $response['message'] = 'post change password unsuccessful';
                 $response['data'] = array();
+
                 return response()->json($response);
             } else {
                 $response['error'] = false;
@@ -335,7 +335,7 @@ class CustomerController extends Controller
         }
     }
 
-    public function login(Request $request)
+    public function getLoginUser(Request $request)
     {
         /* Parameters to be passed
             mobile: 9874565478
@@ -343,7 +343,8 @@ class CustomerController extends Controller
             password: 12345678
             fcm_id: FCM_ID
         */
-    
+      
+       
         $validator = Validator::make($request->all(), [
                
             'mobile'=>'required_without:email|numeric',
@@ -353,43 +354,44 @@ class CustomerController extends Controller
         ]);
         
         if ($validator->fails()) {
+            
             $this->response['error'] = true;
             $this->response['message'] = $validator->errors()->first();
-            return response()->json($response);
+            return response()->json($this->response);
         }
-
-        $login = $this->ion_auth->login($this->input->post('mobile'), $this->input->post('password'), false);
+        
+    $login = Ec_customer::login($request->mobile,$request->password, false);
+       
         if ($login) {
-            if (isset($_POST['fcm_id']) && !empty($_POST['fcm_id'])) {
-                update_details(['fcm_id' => $_POST['fcm_id']], ['mobile' => $_POST['mobile']], 'users');
+            if (isset($request->fcm_id) && !empty($request->fcm_id)) {
+                Fun::update_details(['fcm_id' => $request->fcm_id], ['mobile' => $request->mobile], 'ec_customers');
             }
-            $data = fetch_details(['mobile' => $this->input->post('mobile', true)], 'users');
-            unset($data[0]['password']);
-            if (empty($data[0]['image']) || file_exists(FCPATH . USER_IMG_PATH . $data[0]['image']) == FALSE) {
-                $data[0]['image'] = base_url() . NO_IMAGE;
-            } else {
-                $data[0]['image'] = base_url() . USER_IMG_PATH . $data[0]['image'];
-            }
+            $data=Ec_customer::get_customer_data_by_id(null,$request->mobile);
+
             //if the login is successful
-            $response['error'] = false;
-            $response['message'] = strip_tags($this->ion_auth->messages());
-            $response['data'] = $data;
-            echo json_encode($response);
-            return false;
+            $this->response['error'] = false;
+            $this->response['message'] = 'Logged In Successfully';
+            $this->response['data'] = $data;
+            return response()->json($this->response);
+           // dd( $data);
         } else {
-            if (!is_exist(['mobile' => $_POST['mobile']], 'users')) {
-                $response['error'] = true;
-                $response['message'] = 'User does not exists !';
-                echo json_encode($response);
-                return false;
+            if (!Fun::is_exist(['phone' => $request->mobile], 'ec_customers')) {
+                $this->response['error'] = true;
+                $this->response['message'] = 'User does not exists !';
+                return response()->json($this->response);
             }
 
             // if the login was un-successful
             // just print json message
-            $response['error'] = true;
-            $response['message'] = strip_tags($this->ion_auth->errors());
-            echo json_encode($response);
-            return false;
+            $this->response['error'] = true;
+            $this->response['message'] ='login was un successful';
+            return response()->json($this->response);
         }
+
     }
-}
+
+
+
+
+}      
+
