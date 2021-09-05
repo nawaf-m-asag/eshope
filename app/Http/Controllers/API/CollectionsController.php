@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Ec_product_collections;
 use App\Models\Ec_product;
-
+use App\Models\Fun;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use RvMedia;
@@ -42,74 +42,53 @@ class CollectionsController extends Controller
     $p_offset = (isset($request->p_offset) && !empty(trim($request->p_offset))) ? $request->p_offset: 0;
     $p_order = (isset($request->p_order) && !empty(trim($request->p_order))) ? $request->p_order : 'DESC';
     $p_sort = (isset($request->p_sort) && !empty(trim($request->p_sort))) ? $request->p_sort: 'p.id';
-
+    $filters['attribute_value_ids'] = (isset($request->attribute_value_ids)) ? $request->attribute_value_ids : null;
+    $filters['product_type'] = (isset($request->top_rated_product) && $request->top_rated_product== 1) ? 'top_rated_product_including_all_products' : null;
 
     $collections=Ec_product_collections::select('*');
     if(isset($section_id) && !empty($section_id)){
-         $collections=$collections->where('id',$section_id);
+      
+    $collections->where('id',$section_id);
     }
     $collections=$collections->where("status","published")->limit($limit)->offset($offset)->get();
     $collections_array= $collections->toarray();
+ 
     if(!empty($collections_array)){
+      
         foreach ($collections as $key => $collection) {
-
+            $query=null;
             $query=DB::
             table('ec_product_collections as epc')
             ->Join('ec_product_collection_products as epcp','epcp.product_collection_id','=','epc.id')
             ->Join('ec_products as p','p.id','=','epcp.product_id') 
-            ->Join('ec_product_category_product as cp','cp.product_id','=','p.id')
-                ->leftJoin('ec_product_categories as c',function($query){
-        
-                    $query->on('c.id','=', DB::raw('(SELECT cp2.category_id FROM ec_product_category_product as cp2 WHERE p.id = cp2.product_id LIMIT 1)'));
-            })->where('epcp.product_collection_id',$collection->id)
-            ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
-            ->select([DB::raw('DISTINCT(p.id)'),
-            'p.name as product_name',
-            'p.tax_id',
-            'p.quantity',
-            'p.description as short_description',
-            'p.sku',
-            'c.id as category_id',
-            'p.content as description',
-            'p.order',
-            'c.name as category_name',
-            'p.status',
-            'p.content',
-            'p.images',
-            'tax.percentage',
-            'p.is_variation',
-            'epc.id as epc_id',
-            'epc.name as epc_name',
-            'epc.description as epc_description',
-            'epc.created_at as epc_created_at',
+            ->selectRaw('group_concat(DISTINCT(p.id)) as product_ids');
+            if(isset($section_id) && !empty($section_id)){
+      
+                $query->where('epc.id',$collection->id);
+                }
+             $query=$query->groupBy('epc.id')
+            ->where("p.status","published")->get();
             
-           ]
-        )->where("p.status","published")->orderBy($p_sort,$p_order)->limit($p_limit)->offset($p_offset)->get();
-        
         $total = 0;
-        $res= $query->toarray();
-        
+
+        $res= $query->toArray();
        
-                if (!empty($res)) {
-                    $pro_details = Ec_product::get_products_By_ids($query,$user_id);
+                if (!empty($res)&&isset($res[$key]->product_ids)) {
+                    $product_ids = explode(',', $res[$key]->product_ids);
+                    $product_ids = array_filter($product_ids);
+                    if (isset($request->top_rated_product) && !empty($request->top_rated_product)) {
+                        $filters['product_type'] = (isset($request->top_rated_product) && $request->top_rated_product == 1) ? 'top_rated_product_including_all_products' : null;
+                    }
+
+                    $pro_details = Ec_product::fetch_product_json_data($user_id, (isset($filters)) ? $filters : null, (isset($product_ids) && !empty($product_ids)) ? $product_ids : null, null, $p_limit, $p_offset, $p_sort, $p_order);
                 
                     $total=DB::table('ec_product_collection_products')->where('product_collection_id',$collection->id)->count();
-                        
-                    
-                        $ids="";
-                        foreach ($pro_details['product']as $i => $item) {
-                            if($i==0)
-                            $ids.=$pro_details['product'][$i]['id'];
-                            else
-                            $ids.=','.$pro_details['product'][$i]['id'];
-    
-                        }
-    
+
                         $data[$key]['id']="$collection->id";
-                        $data[$key]['title']=$collection->name;
-                        $data[$key]['short_description']=$collection->description;
+                        $data[$key]['title']=Fun::output_escaping($collection->name);
+                        $data[$key]['short_description']=Fun::output_escaping($collection->description);
                         $data[$key]['style']="default";
-                        $data[$key]['product_ids']=$ids;
+                        $data[$key]['product_ids']=$res[$key]->product_ids;
                         $data[$key]['row_order']="0";
                         $data[$key]['categories']=null;
                         $data[$key]['product_type']="custom_products";
@@ -121,6 +100,7 @@ class CollectionsController extends Controller
                 }
                 else
                 {
+                   
                         $this->response['error'] = true;
                         $this->response['message'] = "Sections not found";
                         $data[$key]['total'] = "0";

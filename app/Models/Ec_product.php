@@ -16,7 +16,7 @@ class Ec_product extends Model
     public static function  fetch_product_json_data($user_id = NULL, $filter = NULL, $id = NULL, $category_id = NULL, $limit = NULL, $offset = NULL, $sort = NULL, $order = NULL, $return_count = NULL)
     {
   
-       
+      
         $query=DB::table('ec_products as p')    
         ->Join('ec_product_category_product as cp','cp.product_id','=','p.id')
             ->leftJoin('ec_product_categories as c',function($query){
@@ -52,14 +52,15 @@ class Ec_product extends Model
             ->leftJoin('ec_product_tags as pt', 'pt.id','=','ptp.tag_id')->addSelect('pt.name');
             
             
-            $tags= explode(" ", $filter['search']);
+          
             //search string to array Ex: "hello world" to be =>array(hello,world)
             if(!empty($filter['search'])){
+                $tags= explode(" ", $filter['search']);
                $query->whereIn('pt.name',$tags);       
                $query->orWhere('p.name', 'like','%'.trim($filter['search']).'%');
                $products['search']=$filter['search'];
             }   
-               /* || filter product by tags name ||*/
+        /* || filter product by tags name ||*/
             if (!empty($filter['tags'])) {
                 $tags= explode(" ", $filter['tags']);
                 $query->whereIn('pt.name',$tags); 
@@ -68,7 +69,7 @@ class Ec_product extends Model
 
          }         
 
-    
+        /* || filter product by price  ||*/
        if ($sort == 'pv.price' && !empty($sort) && $sort != NULL) {
         $products=$query->orderBy('p.price',$order);
         }
@@ -103,10 +104,11 @@ class Ec_product extends Model
             $products=$query->orderBy("no_of_ratings", "desc");
             $products=$query->orderBy("rating", "desc");
         }
-    
+      
         if (isset($filter) && !empty($filter['product_type']) && strtolower($filter['product_type']) == 'top_rated_product_including_all_products') {
             $sort = null;
             $order = null;
+            
             $products=$query->orderBy("no_of_ratings", "desc");
             $products=$query->orderBy("rating", "desc");
         }
@@ -119,7 +121,7 @@ class Ec_product extends Model
       
         if (isset($id) && !empty($id) && $id != null) {
             if (is_array($id) && !empty($id)) {
-                $products=$query->where('p.id', $id);
+                $products=$query->whereIn('p.id', $id);
                
             } else {
                 if (isset($filter) && !empty($filter['is_similar_products']) && $filter['is_similar_products'] == '1') {
@@ -134,7 +136,7 @@ class Ec_product extends Model
             $products=$query->limit($limit)->offset($offset);
         }
         if (isset($filter) && !empty($filter['attribute_value_ids'])) {
-
+            
             $str = explode(",",$filter['attribute_value_ids']);   // Ids should be in array and comma deleted EX: "1,2,3" => array(1,2,3)
             $products=$query
             ->join('ec_product_variations as pv','pv.configurable_product_id','=','p.id')
@@ -462,8 +464,8 @@ public static function getVariant_ids($id){
         $output= DB::table('ec_product_variations as pv')
        ->join('ec_product_variation_items as pvi','pvi.variation_id','=','pv.id')->orderBy('pa.id')
        ->join('ec_product_attributes as pa','pa.id','=','pvi.attribute_id')
-       ->join('ec_product_attribute_sets as pas','pas.id','=','pa.attribute_set_id')->distinct('p.id')
-       ->selectRaw('group_concat(DISTINCT(pa.id)) as attribute_values_id, group_concat(DISTINCT(pa.title)) as attribute_values,pas.title as name')
+       ->join('ec_product_attribute_sets as pas','pas.id','=','pa.attribute_set_id')
+       ->selectRaw('group_concat(DISTINCT(pa.id)) as attribute_values_id, group_concat(DISTINCT(pa.title)ORDER BY pa.id) as attribute_values,pas.title as name')
         ->groupBy('pas.title')
         ->where(function( $output)use($ids){
             foreach ($ids as $key => $value) {

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Ec_product_category;
+
 use RvMedia;
 
 class CategoryController
@@ -36,7 +37,7 @@ class CategoryController
              $offset = isset($request->offset)? $request->offset:0;
              $limit = isset($request->limit)? $request->limit: 25;
              $order = isset($request->order)? $request->order:'ASC';
-             $sort = isset($request->sort)? $request->sort:'order';
+             $sort = isset($request->sort)? $request->sort:'c1.order';
              $id = isset($request->id)? $request->id: '';
 
              $this->response['message'] = "Cateogry(s) retrieved successfully!";

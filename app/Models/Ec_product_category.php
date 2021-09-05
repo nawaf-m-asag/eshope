@@ -42,7 +42,7 @@ class Ec_product_category extends Model
         $query->limit($limit);
     }
 
-    $categories= $query->orderBy('c1.'.$sort, $order)->get();
+    $categories= $query->orderBy($sort, $order)->get();
  
     $count_res = Ec_product_category::count();  
 
