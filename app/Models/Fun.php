@@ -134,8 +134,67 @@ public static function is_exist($where, $table, $update_id = null)
 		
 	}
 
+    public static function get_settings($type = 'system_settings', $is_json = false)
+    {
+       
+        $res = DB::table('app_settings')->select('*')->where('variable', $type)->get()->toarray();
+        if (!empty($res)) {
+            if ($is_json) {
+                return json_decode($res[0]->value, true);
+            } else {
+                return output_escaping($res[0]->value);
+            }
+        }
+    }
+    //update_wallet_balance
+    public static function update_wallet_balance($operation, $user_id, $amount, $message = "Balance Debited")
+    {
 
+    
+        $user_balance =DB::table('ec_customers')->select('balance')->where(['id' => $user_id])->get()->toArray();
+        if (!empty($user_balance)) {
 
+            if ($operation == 'debit' && $amount > $user_balance[0]->balance) {
+                $response['error'] = true;
+                $response['message'] = "Debited amount can't exceeds the user balance !";
+                $response['data'] = array();
+                return $response;
+            }
+
+            if ($user_balance[0]->balance >= 0) {
+                $data = [
+                    'transaction_type' => 'wallet',
+                    'user_id' => $user_id,
+                    'type' => $operation,
+                    'amount' => $amount,
+                    'message' => $message,
+                ];
+                if ($operation == 'debit') {
+                    $data['message'] = (isset($message)) ? $message : 'Balance Debited';
+                    $data['type'] = 'debit';
+                    DB::table('ec_customers')->update('balance', '`balance` - ' . $amount)->where('id', $user_id);
+                } else {
+                    $data['message'] = (isset($message)) ? $message : 'Balance Credited';
+                    $data['type'] = 'credit';
+                    DB::table('ec_customers')->update('balance', '`balance` + ' . $amount)->where('id', $user_id);
+                }            
+                $data = escape_array($data);
+               // $t->db->insert('transactions', $data);
+                $response['error'] = false;
+                $response['message'] = "Balance Update Successfully";
+                $response['data'] = array();
+            } else {
+                $response['error'] = true;
+                $response['message'] = ($user_balance[0]->balance != 0) ? "User's Wallet balance less than " . $user_balance[0]->balance. " can be used only" : "Doesn't have sufficient wallet balance to proceed further.";
+                $response['data'] = array();
+            }
+        } else {
+            $response['error'] = true;
+            $response['message'] = "User does not exist";
+            $response['data'] = array();
+        }
+        return $response;
+    }
 
 
 

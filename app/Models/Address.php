@@ -121,21 +121,25 @@ class Address extends Model
                 ->orderBy('addr.id', 'DESC');
                 if (isset($user_id) || $id != false) {
                     if (isset($user_id) && $user_id != null && !empty($user_id)) {
+                      
                         $query->where('user_id',$user_id);
                     }
                     if ($id != false) {
+                       
                         $query->where('addr.id', $id);
                     }
                    
             
             if ($fetch_latest == true) {
+               
                 $query->limit(1);
             }
             if (!empty($is_default)) {
+                
                 $query->where('is_default', 1);
             }
             $res = $query->get()->toArray();
-      
+     
             if (!empty($res)) {
                 for ($i = 0; $i < count($res); $i++) {
                     $res[$i] = Fun::output_escaping($res[$i]);

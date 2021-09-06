@@ -57,8 +57,7 @@ Route::post('remove_from_favorites',App\Http\Controllers\API\Wish_listsControlle
 Route::post('login',App\Http\Controllers\API\CustomerController::class . '@getLoginUser');
 Route::post('get_setting',App\Http\Controllers\API\SettingsController::class . '@getSetting');
 
-
-
+Route::post('validate_promo_code',App\Http\Controllers\API\CartController::class . '@validatePromo');
 
    
     

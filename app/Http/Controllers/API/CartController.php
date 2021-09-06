@@ -85,6 +85,7 @@ class CartController extends Controller
     }   
     public function removeFromCart(Request $request)
     {
+        $settings = Fun::get_settings('system_settings', true);
        
         $validator = Validator::make($request->all(), [
             'user_id'=>'required|integer',    
@@ -93,7 +94,7 @@ class CartController extends Controller
     
         if ($validator->fails()) {
             $this->response['error'] = true;
-            $this->response['message'] = "error";
+            $this->response['message'] = $validator->errors()->first();
             $this->response['data'] = array();
             print_r(json_encode($this->response));
             return;
@@ -117,9 +118,9 @@ class CartController extends Controller
             if (!empty($cart_total_response) && isset($cart_total_response)) {
                 $this->response['data'] = [
                     'total_quantity' => strval($cart_total_response['quantity']),
-                    'sub_total' => strval($cart_total_response['sub_total']),
+                    'sub_total' => strval(round($cart_total_response['sub_total'],2)),
                     'total_items' => (isset($cart_total_response[0]->total_items)) ? strval($cart_total_response[0]->total_items) : "0",
-                    'max_items_cart' => "12"
+                    'max_items_cart' => $settings['max_items_cart']
                 ];
             } else {
                 $this->response['data'] = [];
@@ -138,7 +139,7 @@ class CartController extends Controller
     
         if ($validator->fails()) {
             $this->response['error'] = true;
-            $this->response['message'] = "error";
+            $this->response['message'] = $validator->errors()->first();
             $this->response['data'] = array();
             return response()->json($this->response);
         } else {
@@ -147,7 +148,7 @@ class CartController extends Controller
             $is_saved_for_later = (isset($request->is_saved_for_later) && $request->is_saved_for_later== 1) ? $request->is_saved_for_later: 0;
             $cart_user_data = Cart::get_user_cart($request->user_id, $is_saved_for_later);
             
-            $cart_total_response = Cart::get_cart_total($user_id, '', $is_saved_for_later);
+            $cart_total_response = Cart::get_cart_total($user_id,'', $is_saved_for_later);
             $tmp_cart_user_data = $cart_user_data;
         
             if (!empty($tmp_cart_user_data)) {
@@ -162,9 +163,7 @@ class CartController extends Controller
                                 Fun::update_details(['is_saved_for_later' => '1'],['product_variant_id'=>$cart_user_data[$i]['product_variant_id']], 'cart');
                                 unset($cart_user_data[$i]);
                             }
-
                             if (!empty($pro_details['product'])) {
-            
                                 $cart_user_data[$i]['product_details']= $pro_details['product'];
                             } else {
                              
@@ -200,14 +199,38 @@ class CartController extends Controller
             $this->response['total_quantity'] = $cart_total_response['quantity'];
             $this->response['sub_total'] = $cart_total_response['sub_total'];
             $this->response['delivery_charge'] ="0";
-
             $this->response['tax_percentage'] = (isset($cart_total_response['tax_percentage'])) ? $cart_total_response['tax_percentage'] : "0";
-            $this->response['tax_amount'] = (isset($cart_total_response['tax_amount'])) ? $cart_total_response['tax_amount'] : "0";
+            $this->response['tax_amount'] = (isset($cart_total_response['tax_amount'])) ? round($cart_total_response['tax_amount'],2) : "0";
             $this->response['overall_amount'] = $cart_total_response['overall_amount'];
-            $this->response['total_arr'] =  $cart_total_response['total_arr'];
+            $this->response['total_arr'] = round($cart_total_response['total_arr'],2);
             $this->response['variant_id'] =  $cart_total_response['variant_id'];
             $this->response['data'] =array_values($cart_user_data);
             return response()->json($this->response);
+        }
+    }
+
+
+    public function validatePromo(Request $request)
+    {
+        /*
+            promo_code:'NEWOFF10'
+            user_id:28
+            final_total:'300'
+        */
+        $validator = Validator::make($request->all(), [
+        'promo_code'=>'required',    
+        'user_id'=>'required',
+        'final_total'=>'required'
+         ]);
+
+        if ($validator->fails()) {
+            $this->response['error'] = true;
+            $this->response['message'] = $validator->errors()->first();
+            $this->response['data'] = array();
+            return response()->json($this->response);
+
+        } else {
+            print_r(json_encode(Cart::validate_promo_code($request->promo_code, $request->user_id, $request->final_total)));
         }
     }
 }

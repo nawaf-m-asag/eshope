@@ -120,135 +120,128 @@ class Cart extends Model
         return $response;
     }
     public static function get_cart_total($user_id, $product_variant_id = false, $is_saved_for_later = '0', $address_id = '')
-{
-    
-    $query=DB::table('ec_products as p')
-    ->leftJoin('cart','cart.product_variant_id','=','p.id')
-    ->rightJoin('ec_products  as pp',function($query){
-        $query->on('pp.id','=','cart.product_variant_id');
-    })
-    ->select([DB::raw('DISTINCT(p.id)'),
-    DB::raw('(select sum(qty)  from cart where user_id="' . $user_id . '" and qty!=0  and  is_saved_for_later = "' . $is_saved_for_later . '" ) as total_items'),
-    DB::raw('(select count(id) from cart where user_id="' . $user_id . '" and qty!=0 and  is_saved_for_later = "' . $is_saved_for_later . '" ) as cart_count'),
-    'cart.user_id',
-    'cart.product_variant_id',
-    'cart.qty',
-    'cart.is_saved_for_later',
-    'cart.created_at as date_created',
-    'p.sku as slug',
-    'p.name',
-    'p.description as short_description',
-    'p.price',
-    'p.sale_price as special_price',
-    'p.content as description',
-    'p.images',
-    ]
-);
-
-    if ($product_variant_id == true) {
-    $query=$query->where('cart.product_variant_id',$product_variant_id)
-    ->where('cart.user_id',$user_id)
-    ->where('cart.qty','!=',0);
-
-    } else {
-    $query=$query->where('cart.user_id',$user_id)
-    ->where('cart.qty','!=',0);
-    }
-
-    if ($is_saved_for_later == 0) {
-        $query=$query->where('is_saved_for_later', 0);
-    } else {
-        $query=$query->where('is_saved_for_later', 1);
-    }
-
-   
-    $query=$query->orderBy('cart.id', "DESC");
-    
-    $data = $query->get()->toArray();
- 
-   
-  
-    // print_r($t->db->last_query());
-    $total = array();
-    $variant_id = array();
-    $quantity = array();
-    $percentage = array();
-    $amount = array();
-    $cod_allowed = 1;
-
-    foreach ($data as $i => $value) {
-     
-      
-        $data[$i]->tax_percentage=Cart::get_tax_percentage($value->id);
-      
-      //  dd( $data[$i]->tax_percentage);
-        //use to get first image in array it is defulte
-        $product_images=json_decode( $data[$i]->images);
-            $default_imag=null;
-            if(!empty($product_images))
-            $default_imag=$product_images[0];
-
-
-        $prctg = (isset($data[$i]->tax_percentage) && intval($data[$i]->tax_percentage) > 0 && $data[$i]->tax_percentage != null) ? $data[$i]->tax_percentage : '0';
-      
-        $price_tax_amount = $data[$i]->price * ($prctg / 100);
-        $special_price_tax_amount = $data[$i]->special_price* ($prctg / 100);
+    {
         
-        $data[$i]->image_sm= RvMedia::getImageUrl($default_imag,'small', false, RvMedia::getDefaultImage());
-        $data[$i]->image_md= RvMedia::getImageUrl($default_imag,'medium', false, RvMedia::getDefaultImage());
-        $data[$i]->image= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
-        
+        $query=DB::table('ec_products as p')
+        ->leftJoin('cart','cart.product_variant_id','=','p.id')
+        ->rightJoin('ec_products  as pp',function($query){
+            $query->on('pp.id','=','cart.product_variant_id');
+        })
+        ->select([DB::raw('DISTINCT(p.id)'),
+        DB::raw('(select sum(qty)  from cart where user_id="' . $user_id . '" and qty!=0  and  is_saved_for_later = "' . $is_saved_for_later . '" ) as total_items'),
+        DB::raw('(select count(id) from cart where user_id="' . $user_id . '" and qty!=0 and  is_saved_for_later = "' . $is_saved_for_later . '" ) as cart_count'),
+        'cart.user_id',
+        'cart.product_variant_id',
+        'cart.qty',
+        'cart.is_saved_for_later',
+        'cart.created_at as date_created',
+        'p.sku as slug',
+        'p.name',
+        'p.description as short_description',
+        'p.price',
+        'p.sale_price as special_price',
+        'p.content as description',
+        'p.images',
+        ]
+        );
 
-        
-            $cod_allowed = 0;
-        
+        if ($product_variant_id == true) {
+        $query=$query->where('cart.product_variant_id',$product_variant_id)
+        ->where('cart.user_id',$user_id)
+        ->where('cart.qty','!=',0);
 
-        $variant_id[$i] =(string) $data[$i]->id;
-        $quantity[$i] = intval($data[$i]->qty);
-        if (floatval($data[$i]->special_price) > 0) {
-            $total[$i] = floatval($data[$i]->special_price + $special_price_tax_amount) * $data[$i]->qty;
         } else {
+        $query=$query->where('cart.user_id',$user_id)
+        ->where('cart.qty','!=',0);
+        }
+
+        if ($is_saved_for_later == 0) {
+            $query=$query->where('is_saved_for_later', 0);
+        } else {
+            $query=$query->where('is_saved_for_later', 1);
+        }
+
+        $query=$query->orderBy('cart.id', "DESC");
+        $data = $query->get()->toArray();
+
+        // print_r($t->db->last_query());
+        $total = array();
+        $variant_id = array();
+        $quantity = array();
+        $percentage = array();
+        $amount = array();
+        $cod_allowed = 1;
+
+        foreach ($data as $i => $value) {
+            $data[$i]->tax_percentage=Cart::get_tax_percentage($value->id);
+        
+        //  dd( $data[$i]->tax_percentage);
+            //use to get first image in array it is defulte
+            $product_images=json_decode( $data[$i]->images);
+                $default_imag=null;
+                if(!empty($product_images))
+                $default_imag=$product_images[0];
+
+
+            $prctg = (isset($data[$i]->tax_percentage) && intval($data[$i]->tax_percentage) > 0 && $data[$i]->tax_percentage != null) ? $data[$i]->tax_percentage : '0';
+        
+            $price_tax_amount = $data[$i]->price * ($prctg / 100);
+            $special_price_tax_amount = $data[$i]->special_price* ($prctg / 100);
             
-            $total[$i] =floatval($data[$i]->price+ $price_tax_amount) *$data[$i]->qty;
-        }
-        $data[$i]->special_price= $data[$i]->special_price+ $special_price_tax_amount;
-        $data[$i]->price= $data[$i]->price+ $price_tax_amount;
+            $data[$i]->image_sm= RvMedia::getImageUrl($default_imag,'small', false, RvMedia::getDefaultImage());
+            $data[$i]->image_md= RvMedia::getImageUrl($default_imag,'medium', false, RvMedia::getDefaultImage());
+            $data[$i]->image= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
+            
 
-        $percentage[$i] = (isset($data[$i]->tax_percentage) && floatval($data[$i]->tax_percentage) > 0) ? $data[$i]->tax_percentage: 0;
-      
-        if ($percentage[$i] != NUll && $percentage[$i] > 0) {
-            $amount[$i] = round($total[$i] *  $percentage[$i] / 100, 2);
-          
-        } else {
-            $amount[$i] = 0;
-            $percentage[$i] = 0;
-        }
+            
+            $cod_allowed = 0;
+            
 
-       // $data[$i]->product_variants= get_variants_values_by_id($data[$i]->id);
+            $variant_id[$i] =(string) $data[$i]->id;
+            $quantity[$i] = intval($data[$i]->qty);
+            if (floatval($data[$i]->special_price) > 0) {
+                $total[$i] = floatval($data[$i]->special_price + $special_price_tax_amount) * $data[$i]->qty;
+            } else {
+                
+                $total[$i] =floatval($data[$i]->price+ $price_tax_amount) *$data[$i]->qty;
+            }
+            $data[$i]->special_price= $data[$i]->special_price+ $special_price_tax_amount;
+            $data[$i]->price= $data[$i]->price+ $price_tax_amount;
+
+            $percentage[$i] = (isset($data[$i]->tax_percentage) && floatval($data[$i]->tax_percentage) > 0) ? $data[$i]->tax_percentage: 0;
+        
+            if ($percentage[$i] != NUll && $percentage[$i] > 0) {
+                $amount[$i] = round($total[$i] *  $percentage[$i] / 100, 2);
+            
+            } else {
+                $amount[$i] = 0;
+                $percentage[$i] = 0;
+            }
+
+        }
+        $total = array_sum($total);
+    
+        // if (!empty($address_id)) {
+        //     $delivery_charge = get_delivery_charge($address_id, $total);
+        // }
+
+        // $delivery_charge = str_replace(",", "", $delivery_charge);
+        $overall_amt = 0;
+        $tax_amount = array_sum($amount);
+        $overall_amt = $total;
+        $data=(array)$data;
+    // $data[0]->is_cod_allowed= $cod_allowed;
+        $data['sub_total'] = strval($total);
+        $data['quantity'] = strval(array_sum($quantity));
+        $data['tax_percentage'] = strval(array_sum($percentage));
+        $data['tax_amount'] = strval(array_sum($amount));
+        $data['total_arr'] = $total;
+        $data['variant_id'] = $variant_id;
+        $data['delivery_charge'] ="0";
+        $data['overall_amount'] = strval($overall_amt);
+        $data['amount_inclusive_tax'] = strval($overall_amt + $tax_amount);
+        return $data;
     }
-    $total = array_sum($total);
-   
-    // if (!empty($address_id)) {
-    //     $delivery_charge = get_delivery_charge($address_id, $total);
-    // }
-
-    // $delivery_charge = str_replace(",", "", $delivery_charge);
-    $overall_amt = 0;
-    $tax_amount = array_sum($amount);
-    $overall_amt = $total;
-    $data=(array)$data;
-   // $data[0]->is_cod_allowed= $cod_allowed;
-    $data['sub_total'] = strval($total);
-    $data['quantity'] = strval(array_sum($quantity));
-    $data['tax_percentage'] = strval(array_sum($percentage));
-    $data['tax_amount'] = strval(array_sum($amount));
-    $data['total_arr'] = $total;
-    $data['variant_id'] = $variant_id;
-    $data['delivery_charge'] ="0";
-    $data['overall_amount'] = strval($overall_amt);
-    $data['amount_inclusive_tax'] = strval($overall_amt + $tax_amount);
-    return $data;
-}
     public static function get_tax_percentage($id)
     {
        $res=DB::table('ec_products as p')
@@ -259,20 +252,17 @@ class Cart extends Model
       
         if(isset($res[0]) && $res[0]->percentage==null){
            
-            $res=DB::table('ec_products as p')
-            
+        $res=DB::table('ec_products as p')  
         ->leftJoin('ec_product_variations as pv','pv.configurable_product_id','=','p.id')   
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
         ->select('tax.percentage')
         ->where('pv.product_id',$id)
         ->get()->toArray();
-
         }
       
 
         if(isset($res[0]->percentage)&&$res[0]->percentage!=null)
         {
-        
             return $res[0]->percentage; 
         }
         else
@@ -307,7 +297,6 @@ class Cart extends Model
             ->where('p.id',$product_variant_id);
         }
         $res =  $q->select(
-            
             'c.user_id',
             'c.product_variant_id',
             'p.name',
@@ -334,19 +323,18 @@ class Cart extends Model
                 $default_imag=$product_images[0];
 
                 $d=(array)$d;
-               $d['product_variant_id']= (string) $d['product_variant_id'];
-               $d['user_id']=(string) $d['user_id'];
-               $d['qty']= (string)$d['qty'];
-               $d['is_saved_for_later']= (string)$d['is_saved_for_later'];      
-              
+               $d['product_variant_id']=strval($d['product_variant_id']);
+               $d['user_id']=strval($d['user_id']);
+               $d['qty']= strval($d['qty']);
+               $d['is_saved_for_later']=strval($d['is_saved_for_later']);      
                $d['special_price']= ($d['special_price']!="")?$d['special_price']:0; 
-               $d['id']=(string)Fun::get_product_id($d['product_variant_id']); 
+               $d['id']=strval(Fun::get_product_id($d['product_variant_id'])); 
                $d['is_prices_inclusive_tax']="0";
                $d['image']= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
-               $d['minimum_order_quantity']= (string)1;
-               $d['quantity_step_size']= (string)1;
+               $d['minimum_order_quantity']=strval(1);
+               $d['quantity_step_size']= strval(1);
                $d['total_allowed_quantity'] = '';
-               $d['tax_percentage']=(string) Cart::get_tax_percentage($d['id']);
+               $d['tax_percentage']=strval(Cart::get_tax_percentage($d['id']));
                $d['product_variants']= Ec_product::getVariants(null,$d['product_variant_id']);
                 return $d;
             }, $res);
@@ -355,6 +343,113 @@ class Cart extends Model
         return $res;
       
     }
+    public static function validate_promo_code($promo_code, $user_id, $final_total)
+    {
+        if (isset($promo_code) && !empty($promo_code)) {
+
+            //Fetch Promo Code Details
+            $promo_code =DB::table('ec_discounts as pc')->selectRaw('pc.*')
+             ->where('pc.code',$promo_code)
+             ->where('pc.start_date','<=',date('Y-m-d H:i:s'))
+            
+             ->where(function($promo_code)
+             {
+                $promo_code->when('pc.end_date',null)->where('pc.end_date','>=',date('Y-m-d H:i:s'));
+             })
+             
+
+             ->get()->toArray();
+            dd($promo_code);    
+            if (!empty($promo_code[0]['id'])) {
+
+                if (intval($promo_code[0]['promo_used_counter']) < intval($promo_code[0]['no_of_users'])) {
+
+                    if ($final_total >= intval($promo_code[0]['minimum_order_amount'])) {
+
+                        if ($promo_code[0]['repeat_usage'] == 1 && ($promo_code[0]['user_promo_usage_counter'] <= $promo_code[0]['no_of_repeat_usage'])) {
+                            if (intval($promo_code[0]['user_promo_usage_counter']) <= intval($promo_code[0]['no_of_repeat_usage'])) {
+
+                                $response['error'] = false;
+                                $response['message'] = 'The promo code is valid';
+
+                                if ($promo_code[0]['discount_type'] == 'percentage') {
+                                    $promo_code_discount =  floatval($final_total  * $promo_code[0]['discount'] / 100);
+                                } else {
+                                    $promo_code_discount = $promo_code[0]['discount'];
+                                }
+                                if ($promo_code_discount <= $promo_code[0]['max_discount_amount']) {
+                                    $total = floatval($final_total) - $promo_code_discount;
+                                } else {
+                                    $total = floatval($final_total) - $promo_code[0]['max_discount_amount'];
+                                    $promo_code_discount = $promo_code[0]['max_discount_amount'];
+                                }
+                                $promo_code[0]['final_total'] = strval(floatval($total));
+                                $promo_code[0]['final_discount'] = strval(floatval($promo_code_discount));
+                                $response['data'] = $promo_code;
+                                return $response;
+                            } else {
+
+                                $response['error'] = true;
+                                $response['message'] = 'This promo code cannot be redeemed as it exceeds the usage limit';
+                                $response['data'] = array();
+                                return $response;
+                            }
+                        } else if ($promo_code[0]['repeat_usage'] == 0 && ($promo_code[0]['user_promo_usage_counter'] <= 0)) {
+                            if (intval($promo_code[0]['user_promo_usage_counter']) <= intval($promo_code[0]['no_of_repeat_usage'])) {
+
+                                $response['error'] = false;
+                                $response['message'] = 'The promo code is valid';
+
+                                if ($promo_code[0]['discount_type'] == 'percentage') {
+                                    $promo_code_discount =  floatval($final_total  * $promo_code[0]['discount'] / 100);
+                                } else {
+                                    $promo_code_discount = floatval($final_total - $promo_code[0]['discount']);
+                                }
+                                if ($promo_code_discount <= $promo_code[0]['max_discount_amount']) {
+                                    $total = floatval($final_total) - $promo_code_discount;
+                                } else {
+                                    $total = floatval($final_total) - $promo_code[0]['max_discount_amount'];
+                                    $promo_code_discount = $promo_code[0]['max_discount_amount'];
+                                }
+                                $promo_code[0]['final_total'] = strval(floatval($total));
+                                $promo_code[0]['final_discount'] = strval(floatval($promo_code_discount));
+                                $response['data'] = $promo_code;
+                                return $response;
+                            } else {
+
+                                $response['error'] = true;
+                                $response['message'] = 'This promo code cannot be redeemed as it exceeds the usage limit';
+                                $response['data'] = array();
+                                return $response;
+                            }
+                        } else {
+                            $response['error'] = true;
+                            $response['message'] = 'The promo has already been redeemed. cannot be reused';
+                            $response['data'] = array();
+                            return $response;
+                        }
+                    } else {
+
+                        $response['error'] = true;
+                        $response['message'] = 'This promo code is applicable only for amount greater than or equal to ' . $promo_code[0]['minimum_order_amount'];
+                        $response['data'] = array();
+                        return $response;
+                    }
+                } else {
+
+                    $response['error'] = true;
+                    $response['message'] = "This promo code is applicable only for first " . $promo_code[0]['no_of_users'] . " users";
+                    $response['data'] = array();
+                    return $response;
+                }
+            } else {
+                $response['error'] = true;
+                $response['message'] = 'The promo code is not available or expired';
+                $response['data'] = array();
+                return $response;
+            }
+        }
+    }
+        
     
-   
 }
