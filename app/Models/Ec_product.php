@@ -17,13 +17,12 @@ class Ec_product extends Model
     {
   
       
-        $query=DB::table('ec_products as p')    
-        ->Join('ec_product_category_product as cp','cp.product_id','=','p.id')
+        $query=DB::table('ec_products as p')   
+        ->leftJoin('ec_product_category_product as cp','cp.product_id','=','p.id')
             ->leftJoin('ec_product_categories as c',function($query){
              $query->on('c.id','=', DB::raw('(SELECT cp2.category_id FROM ec_product_category_product as cp2 WHERE p.id = cp2.product_id LIMIT 1)')); //تم استخدام هذا الشرط لحل مشكلة التكرار بسبب علاقة many to many بين الاصناف والمنتجات         
         })
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
-        
         ->select([DB::raw('DISTINCT(p.id)'),
         DB::raw('(SELECT COUNT(er.star) FROM ec_reviews as er WHERE p.id = er.product_id) as no_of_ratings'),//get COUNT star for use in order
         DB::raw('(SELECT SUM(er.star) FROM ec_reviews as er WHERE p.id = er.product_id) as rating'),//get sum star for use in order 
@@ -46,8 +45,8 @@ class Ec_product extends Model
     
         /* || filter product by search  ||*/
         if (isset($filter)) {
-           
-            $query->join('ec_product_tag_product as ptp','ptp.product_id','=', 'p.id')
+    
+            $query->leftJoin('ec_product_tag_product as ptp','ptp.product_id','=', 'p.id')
                 
             ->leftJoin('ec_product_tags as pt', 'pt.id','=','ptp.tag_id')->addSelect('pt.name');
             
@@ -67,7 +66,7 @@ class Ec_product extends Model
                
             } 
 
-         }         
+         }     
 
         /* || filter product by price  ||*/
        if ($sort == 'pv.price' && !empty($sort) && $sort != NULL) {
@@ -76,7 +75,7 @@ class Ec_product extends Model
         if (($sort == 'p.date_added'|| $sort == 'p.id') && !empty($sort) && $sort != NULL) {
             $products=$query->orderBy('p.id',$order);
         }
-  
+        
         /* || filter product by category id ||*/
         if (isset($category_id) && !empty($category_id)) 
         {
@@ -91,8 +90,6 @@ class Ec_product extends Model
         
             })->addSelect('c2.id as category_id','c2.name as category_name'); 
         }
-
-
       
         if (isset($filter) && !empty($filter['product_type']) && strtolower($filter['product_type']) == 'products_on_sale') {
             $products=$query->where('p.price','>=',0);
@@ -109,25 +106,28 @@ class Ec_product extends Model
             $sort = null;
             $order = null;
             
-            $products=$query->orderBy("no_of_ratings", "desc");
-            $products=$query->orderBy("rating", "desc");
+            $query->orderBy("no_of_ratings", "desc");
+            $query->orderBy("rating", "desc");
         }
         
         if (isset($filter) && !empty($filter['product_type']) && $filter['product_type'] == 'new_added_products') {
             $sort = 'p.id';
             $order = 'desc';
-            $products=$query->orderBy($sort,$order);
+            $query->orderBy($sort,$order);
         }
-      
+       
         if (isset($id) && !empty($id) && $id != null) {
+           
             if (is_array($id) && !empty($id)) {
                 $products=$query->whereIn('p.id', $id);
+                
                
             } else {
                 if (isset($filter) && !empty($filter['is_similar_products']) && $filter['is_similar_products'] == '1') {
                     $products=$query->where('p.id','!=',$id);
                 } else {
                     $products=$query->where('p.id',$id);
+                    
                 }
                
             }
@@ -152,8 +152,10 @@ class Ec_product extends Model
         
      
       $products=$query->where("p.status","published")->where("p.is_variation",0)->get();
-      
+
         $products= Ec_product::get_products_By_ids($products,$user_id);
+
+        
         $products['search']=(isset($filter['search']) && !empty($filter['search'])) ? $filter['search'] :null;
         return  $products;
     }
@@ -202,7 +204,7 @@ public static function get_products_By_ids($products_ids,$user_id=null){
                     'id'=>"$value->id",
                     'attr_value_ids'=>Ec_product::attr_value_ids($value->id),
                     'name'=>$value->product_name,
-        /*static*/  'is_prices_inclusive_tax'=>"1",
+        /*static*/  'is_prices_inclusive_tax'=>"0",
                     'type'=>$type,
                     "stock"=>"$value->quantity",
                     "category_id"=>"$value->category_id",

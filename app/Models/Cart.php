@@ -13,7 +13,7 @@ class Cart extends Model
         if (!empty($user_id)) {
             $ci= $ci->where('user_id', $user_id);
         }
-        $res= $ci->where('qty','!=', 0)
+        $res= $ci->where('qty','>', 0)
         ->where('is_saved_for_later', 0)
         ->distinct()->count();
         return $res;
@@ -80,12 +80,10 @@ class Cart extends Model
         $error = false;
         for ($i = 0; $i < count($product_variant_ids); $i++) {
             $res =DB::table('ec_products')->where('id', $product_variant_ids[$i])->get();
-            
-
-            if ($res[0]->with_storehouse_management= 0 ) {
+            if ($res[0]->with_storehouse_management==0) {
                 //Case 1 : Simple Product(simple product)
                 
-                if ($res[0]->stock_status == 'out_of_stock') {
+                if ($res[0]->stock_status == 'out_of_stock'&&$qtns!='0') {
                             $error = true;
                             break;
                 }
@@ -93,7 +91,7 @@ class Cart extends Model
             }    
                 //Case 2 & 3 : Product level(variable product) ||  Variant level(variable product)
             else{
-                if($res[0]->allow_checkout_when_out_of_stock==0){
+                if($res[0]->allow_checkout_when_out_of_stock==0&&$res[0]->with_storehouse_management==1){
                     $stock = intval($res[0]->quantity) - intval($qtns[$i]);
                     if ($stock < 0) {
                         $is_exceed_allowed_quantity_limit=true;
@@ -108,7 +106,7 @@ class Cart extends Model
         if ($error) {
             $response['error'] = true;
             if ($is_exceed_allowed_quantity_limit) {
-                $response['message'] = "One of the products quantity exceeds the allowed limit.Please deduct some quanity in order to purchase the item";
+                $response['message'] = "One of the products quantity exceeds the allowed limit($stock).Please deduct some quanity in order to purchase the item";
             } else {
                 $response['message'] = "One of the product is out of stock.";
             }
@@ -143,8 +141,7 @@ class Cart extends Model
         'p.content as description',
         'p.images',
         ]
-        );
-
+         );
         if ($product_variant_id == true) {
         $query=$query->where('cart.product_variant_id',$product_variant_id)
         ->where('cart.user_id',$user_id)
@@ -163,7 +160,8 @@ class Cart extends Model
 
         $query=$query->orderBy('cart.id', "DESC");
         $data = $query->get()->toArray();
-
+       
+        
         // print_r($t->db->last_query());
         $total = array();
         $variant_id = array();
@@ -174,7 +172,7 @@ class Cart extends Model
 
         foreach ($data as $i => $value) {
             $data[$i]->tax_percentage=Cart::get_tax_percentage($value->id);
-        
+           
         //  dd( $data[$i]->tax_percentage);
             //use to get first image in array it is defulte
             $product_images=json_decode( $data[$i]->images);
@@ -185,8 +183,14 @@ class Cart extends Model
 
             $prctg = (isset($data[$i]->tax_percentage) && intval($data[$i]->tax_percentage) > 0 && $data[$i]->tax_percentage != null) ? $data[$i]->tax_percentage : '0';
         
-            $price_tax_amount = $data[$i]->price * ($prctg / 100);
-            $special_price_tax_amount = $data[$i]->special_price* ($prctg / 100);
+            if ((isset($data[$i]->is_prices_inclusive_tax) && $data[$i]->is_prices_inclusive_tax== 0) || (!isset($data[$i]->is_prices_inclusive_tax)) && $percentage > 0) {
+                $price_tax_amount = $data[$i]->price * ($prctg / 100);
+                $special_price_tax_amount = $data[$i]->special_price* ($prctg / 100);
+            } else {
+                $price_tax_amount = 0;
+                $special_price_tax_amount = 0;
+            }
+          
             
             $data[$i]->image_sm= RvMedia::getImageUrl($default_imag,'small', false, RvMedia::getDefaultImage());
             $data[$i]->image_md= RvMedia::getImageUrl($default_imag,'medium', false, RvMedia::getDefaultImage());
@@ -219,6 +223,7 @@ class Cart extends Model
             }
 
         }
+        
         $total = array_sum($total);
     
         // if (!empty($address_id)) {
@@ -231,7 +236,7 @@ class Cart extends Model
         $overall_amt = $total;
         $data=(array)$data;
     // $data[0]->is_cod_allowed= $cod_allowed;
-        $data['sub_total'] = strval($total);
+        $data['sub_total'] =round(strval($total),2);
         $data['quantity'] = strval(array_sum($quantity));
         $data['tax_percentage'] = strval(array_sum($percentage));
         $data['tax_amount'] = strval(array_sum($amount));
@@ -240,7 +245,7 @@ class Cart extends Model
         $data['delivery_charge'] ="0";
         $data['overall_amount'] = strval($overall_amt);
         $data['amount_inclusive_tax'] = strval($overall_amt + $tax_amount);
-        return $data;
+        return $data;   
     }
     public static function get_tax_percentage($id)
     {
@@ -290,8 +295,8 @@ class Cart extends Model
         ->join('cart as c','c.product_variant_id','p.id')
         ->where('c.is_saved_for_later',$is_saved_for_later)
         ->where('c.user_id',$user_id)
-        ->where('c.qty','!=',0);
-    
+        ->where('c.qty','!=',0)
+        ->where('p.status','published');
         if (!empty($product_variant_id)) {
             $q=$q->where('c.product_variant_id', $product_variant_id)
             ->where('p.id',$product_variant_id);
@@ -332,7 +337,7 @@ class Cart extends Model
                $d['is_prices_inclusive_tax']="0";
                $d['image']= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
                $d['minimum_order_quantity']=strval(1);
-               $d['quantity_step_size']= strval(1);
+               $d['quantity_step_size']= strval(12);
                $d['total_allowed_quantity'] = '';
                $d['tax_percentage']=strval(Cart::get_tax_percentage($d['id']));
                $d['product_variants']= Ec_product::getVariants(null,$d['product_variant_id']);
@@ -359,7 +364,7 @@ class Cart extends Model
              
 
              ->get()->toArray();
-            dd($promo_code);    
+              
             if (!empty($promo_code[0]['id'])) {
 
                 if (intval($promo_code[0]['promo_used_counter']) < intval($promo_code[0]['no_of_users'])) {

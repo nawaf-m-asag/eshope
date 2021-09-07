@@ -38,6 +38,7 @@ class OrderController extends Controller
         // }
         $settings = Fun::get_settings('system_settings', true);
         $currency = isset($settings['currency']) && !empty($settings['currency']) ? $settings['currency'] : '';
+    
         if (isset($settings['minimum_cart_amt']) && !empty($settings['minimum_cart_amt'])) {
             $secondValidator= Validator::make($request->all(), [
                 'total'=>'gte:' . $settings['minimum_cart_amt'] . '',    
@@ -47,7 +48,7 @@ class OrderController extends Controller
            
         }
 
-          if ($validator->fails()&&$validatorTwo->fails()) {
+          if ($validator->fails()&&$secondValidator->fails()) {
             $this->response['error'] = true;
             $this->response['message'] =$validator->messages()->merge($secondValidator->messages())->errors()->first();
             $this->response['data'] = array();

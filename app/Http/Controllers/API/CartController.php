@@ -31,16 +31,16 @@ class CartController extends Controller
             
         }else {
 
-           // $settings = get_settings('system_settings', true);
+            $settings = Fun::get_settings('system_settings', true);
             $cart_count = Cart::get_cart_count($request->user_id);
          
             $is_variant_available_in_cart = Cart::is_variant_available_in_cart($request->product_variant_id, $request->user_id);
             
             if (!$is_variant_available_in_cart) {
-
-                if ($cart_count >=12) {
+                
+                if ($cart_count >=$settings['max_items_cart']) {
                     $this->response['error'] = true;
-                    $this->response['message'] = 'Maximum 12 Item(s) Can Be Added Only!';
+                    $this->response['message'] = 'Maximum '.$settings['max_items_cart'].' Item(s) Can Be Added Only!';
                     $this->response['data'] = array();
                     return response()->json($this->response);
                     
@@ -62,11 +62,14 @@ class CartController extends Controller
       }
 
     if (!Cart::add_to_cart($request)) {
-
-                $response = Cart::get_cart_total($request->user_id, false);
+       
+        
+       
+              $response = Cart::get_cart_total($request->user_id);
+              
                 $this->response['error'] = false;
                 $this->response['message'] = 'Cart Updated !';
-
+                $settings = Fun::get_settings('system_settings', true);
                 $this->response['data'] = [
                     'total_quantity' => ($request->qty== 0) ? '0' : strval($request->qty),
                     'sub_total' => strval($response['sub_total']),
@@ -74,8 +77,8 @@ class CartController extends Controller
                     'tax_percentage' => (isset($response['tax_percentage'])) ? strval($response['tax_percentage']) : "0",
                     'tax_amount' => (isset($response['tax_amount'])) ? strval($response['tax_amount']) : "0",
                     'cart_count' => (isset($response[0]->cart_count)) ? strval($response[0]->cart_count) : "0",
-                    'max_items_cart' => "12",
-                    'overall_amount' => $response['overall_amount'],
+                    'max_items_cart' => $settings['max_items_cart'],
+                    'overall_amount' => round($response['overall_amount'],2),
                 ];
                 return response()->json($this->response);
             }
@@ -201,7 +204,7 @@ class CartController extends Controller
             $this->response['delivery_charge'] ="0";
             $this->response['tax_percentage'] = (isset($cart_total_response['tax_percentage'])) ? $cart_total_response['tax_percentage'] : "0";
             $this->response['tax_amount'] = (isset($cart_total_response['tax_amount'])) ? round($cart_total_response['tax_amount'],2) : "0";
-            $this->response['overall_amount'] = $cart_total_response['overall_amount'];
+            $this->response['overall_amount'] = round($cart_total_response['overall_amount'],2);
             $this->response['total_arr'] = round($cart_total_response['total_arr'],2);
             $this->response['variant_id'] =  $cart_total_response['variant_id'];
             $this->response['data'] =array_values($cart_user_data);
