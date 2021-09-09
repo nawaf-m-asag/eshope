@@ -39,6 +39,7 @@ Route::post('place_order',App\Http\Controllers\API\OrderController::class . '@pl
 Route::post('get_cities',App\Http\Controllers\API\CitiesController::class . '@getCities');
 Route::post('get_areas_by_city_id',App\Http\Controllers\API\AreasController::class . '@getArea');
 Route::post('add_address',App\Http\Controllers\API\AddressController::class . '@addNewAddress');
+Route::post('get_address',App\Http\Controllers\API\AddressController::class . '@getAddress');
 Route::post('delete_address',App\Http\Controllers\API\AddressController::class . '@deleteAddress');
 Route::post('get_faqs',App\Http\Controllers\API\FaqsController::class . '@getFaqs');
 Route::post('get_categories',App\Http\Controllers\API\CategoryController::class . '@getCat');
@@ -58,7 +59,7 @@ Route::post('login',App\Http\Controllers\API\CustomerController::class . '@getLo
 Route::post('get_setting',App\Http\Controllers\API\SettingsController::class . '@getSetting');
 
 Route::post('validate_promo_code',App\Http\Controllers\API\CartController::class . '@validatePromo');
-
+Route::post('get_orders',App\Http\Controllers\API\OrderController::class . '@getOrder');
    
     
    

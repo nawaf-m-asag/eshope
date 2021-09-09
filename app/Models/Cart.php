@@ -80,10 +80,10 @@ class Cart extends Model
         $error = false;
         for ($i = 0; $i < count($product_variant_ids); $i++) {
             $res =DB::table('ec_products')->where('id', $product_variant_ids[$i])->get();
-            if ($res[0]->with_storehouse_management==0) {
+            if ($res[0]->with_storehouse_management==0 ) {
                 //Case 1 : Simple Product(simple product)
                 
-                if ($res[0]->stock_status == 'out_of_stock'&&$qtns!='0') {
+                if ($res[0]->stock_status == 'out_of_stock') {
                             $error = true;
                             break;
                 }
@@ -236,7 +236,7 @@ class Cart extends Model
         $overall_amt = $total;
         $data=(array)$data;
     // $data[0]->is_cod_allowed= $cod_allowed;
-        $data['sub_total'] =round(strval($total),2);
+        $data['sub_total'] =strval(round($total,2));
         $data['quantity'] = strval(array_sum($quantity));
         $data['tax_percentage'] = strval(array_sum($percentage));
         $data['tax_amount'] = strval(array_sum($amount));

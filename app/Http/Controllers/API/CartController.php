@@ -64,12 +64,12 @@ class CartController extends Controller
     if (!Cart::add_to_cart($request)) {
        
         
-       
+                $settings = Fun::get_settings('system_settings', true);
               $response = Cart::get_cart_total($request->user_id);
               
                 $this->response['error'] = false;
                 $this->response['message'] = 'Cart Updated !';
-                $settings = Fun::get_settings('system_settings', true);
+               
                 $this->response['data'] = [
                     'total_quantity' => ($request->qty== 0) ? '0' : strval($request->qty),
                     'sub_total' => strval($response['sub_total']),

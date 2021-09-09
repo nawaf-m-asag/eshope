@@ -114,8 +114,8 @@ class Address extends Model
      
            $query= DB::table('addresses as addr')->selectRaw('addr.*,a.name as area,a.minimum_free_delivery_order_amount,a.delivery_charges,c.name as city')
                // ->where($where)
-                ->join('cities as c', 'addr.city_id','=','c.id')
-                ->join('areas as a','addr.area_id','=','a.id')
+                ->leftJoin('cities as c', 'addr.city_id','=','c.id')
+                ->leftJoin('areas as a','addr.area_id','=','a.id')
              
               //  ->groupBy('addr.id')
                 ->orderBy('addr.id', 'DESC');
@@ -135,7 +135,7 @@ class Address extends Model
                 $query->limit(1);
             }
             if (!empty($is_default)) {
-                
+         
                 $query->where('is_default', 1);
             }
             $res = $query->get()->toArray();

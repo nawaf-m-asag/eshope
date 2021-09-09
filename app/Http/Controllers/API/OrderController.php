@@ -60,5 +60,55 @@ class OrderController extends Controller
             return response()->json($res);
         }
     }
+
+    public function getOrder(Request $request)
+    {
+        // user_id:101
+        // active_status: received  {received,delivered,cancelled,processed,returned}     // optional
+
+        // limit:25            // { default - 25 } optional
+        // offset:0            // { default - 0 } optional
+        // sort: id / date_added // { default - id } optional
+        // order:DESC/ASC      // { default - DESC } optional        
+        // download_invoice:0 // { default - 1 } optional        
+  
+        $limit = (isset($request->limit) && is_numeric($request->limit) && !empty(trim($request->limit))) ? $request->limit: 25;
+
+        $offset = (isset($request->offset) && is_numeric($request->offset) && !empty(trim($request->offset))) ? $request->offset: 0;
+
+        $sort = (isset($request->sort) && !empty(trim($request->sort))) ? $request->sort: 'o.id';
+
+        $order = (isset($request->order) && !empty(trim($request->order))) ? $request->order: 'DESC';
+        $search = (isset($request->search) && !empty(trim($request->search))) ? $request->search: '';
+        $validator = Validator::make($request->all(), [
+            'user_id'=>'required|numeric',    
+            'active_status'=>'',
+            'download_invoice'=>'numeric'
+   
+          ]);
+
+        if ($validator->fails()) {
+            $this->response['error'] = true;
+            $this->response['message'] = $validator->errors()->first();;
+            $this->response['data'] = array();
+        } else {
+            $multiple_status =   (isset($request->active_status) && !empty($request->active_status)) ? explode(',', $request->active_status) : false;
+            $download_invoice =   (isset($request->download_invoice) && !empty($request->download_invoice)) ? $request->download_invoice: 1;
+            $order_details = Order::fetch_orders(false, $request->user_id, $multiple_status, false, $limit, $offset, $sort, $order, $download_invoice, false, false, $search);
+
+            if (!empty($order_details)) {
+
+                $this->response['error'] = false;
+                $this->response['message'] = 'Data retrieved successfully';
+                $this->response['total'] = $order_details['total'];
+                $this->response['data'] = $order_details['order_data'];
+            } else {
+                $this->response['error'] = true;
+                $this->response['message'] = 'No Order(s) Found !';
+                $this->response['data'] = array();
+            }
+        }
+        return response()->json($this->response);
+    }
   
 }
