@@ -64,7 +64,7 @@ class CartController extends Controller
     if (!Cart::add_to_cart($request)) {
        
         
-                $settings = Fun::get_settings('system_settings', true);
+              $settings = Fun::get_settings('system_settings', true);
               $response = Cart::get_cart_total($request->user_id);
               
                 $this->response['error'] = false;
@@ -78,7 +78,8 @@ class CartController extends Controller
                     'tax_amount' => (isset($response['tax_amount'])) ? strval($response['tax_amount']) : "0",
                     'cart_count' => (isset($response[0]->cart_count)) ? strval($response[0]->cart_count) : "0",
                     'max_items_cart' => $settings['max_items_cart'],
-                    'overall_amount' => round($response['overall_amount'],2),
+                    'overall_amount' => round($response['overall_amount'],2)
+                 
                 ];
                 return response()->json($this->response);
             }
@@ -167,6 +168,7 @@ class CartController extends Controller
                                 unset($cart_user_data[$i]);
                             }
                             if (!empty($pro_details['product'])) {
+                                $pro_details['product'][0]['image']=$cart_user_data[$i]['image'];
                                 $cart_user_data[$i]['product_details']= $pro_details['product'];
                             } else {
                              
@@ -203,8 +205,8 @@ class CartController extends Controller
             $this->response['sub_total'] = $cart_total_response['sub_total'];
             $this->response['delivery_charge'] ="0";
             $this->response['tax_percentage'] = (isset($cart_total_response['tax_percentage'])) ? $cart_total_response['tax_percentage'] : "0";
-            $this->response['tax_amount'] = (isset($cart_total_response['tax_amount'])) ? round($cart_total_response['tax_amount'],2) : "0";
-            $this->response['overall_amount'] = round($cart_total_response['overall_amount'],2);
+            $this->response['tax_amount'] = (isset($cart_total_response['tax_amount'])) ?strval(round($cart_total_response['tax_amount'],2)): "0";
+            $this->response['overall_amount'] = strval(round($cart_total_response['overall_amount'],2));
             $this->response['total_arr'] = round($cart_total_response['total_arr'],2);
             $this->response['variant_id'] =  $cart_total_response['variant_id'];
             $this->response['data'] =array_values($cart_user_data);
@@ -233,7 +235,7 @@ class CartController extends Controller
             return response()->json($this->response);
 
         } else {
-            print_r(json_encode(Cart::validate_promo_code($request->promo_code, $request->user_id, $request->final_total)));
+            return response()->json(Cart::validate_promo_code($request->promo_code, $request->user_id, $request->final_total));
         }
     }
 }

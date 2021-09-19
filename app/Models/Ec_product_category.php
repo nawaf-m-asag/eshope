@@ -21,10 +21,8 @@ class Ec_product_category extends Model
         
     $query=DB::table('ec_product_categories as c1')->select('c1.id','c1.name','c1.parent_id','c1.status','c1.order as row_order','c1.image')
     ->where($where)
-    ->where(function($query){
-                
-        $query->orWhere(['c1.status' =>'published','c1.is_featured'=>1]);
-    }); 
+    ->orWhere(['c1.is_featured'=>1]);
+    
     if ($has_child_or_item == 'false') {
             $query->leftJoin('ec_product_categories as c2', 'c2.parent_id','=','c1.id');
             $query->leftJoin('ec_product_category_product as pc', 'pc.category_id','=','c1.id')
@@ -63,7 +61,7 @@ class Ec_product_category extends Model
             $i++;
         }
         if(isset($categories[0])){
-			$categories[0]->total =4;
+			$categories[0]->total =$i;
         }
         
  

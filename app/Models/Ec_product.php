@@ -19,7 +19,7 @@ class Ec_product extends Model
       
         $query=DB::table('ec_products as p')   
         ->leftJoin('ec_product_category_product as cp','cp.product_id','=','p.id')
-            ->leftJoin('ec_product_categories as c',function($query){
+         ->leftJoin('ec_product_categories as c',function($query){
              $query->on('c.id','=', DB::raw('(SELECT cp2.category_id FROM ec_product_category_product as cp2 WHERE p.id = cp2.product_id LIMIT 1)')); //تم استخدام هذا الشرط لحل مشكلة التكرار بسبب علاقة many to many بين الاصناف والمنتجات         
         })
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
@@ -40,6 +40,7 @@ class Ec_product extends Model
         'p.images',
         'tax.percentage',
         'p.is_variation',
+        'p.with_storehouse_management'
         ]
     );
     
@@ -67,7 +68,14 @@ class Ec_product extends Model
             } 
 
          }     
+         if (isset($filter) && !empty($filter['product_type']) && strtolower($filter['product_type']) == 'top_rated_product_including_all_products') {
+            $sort = null;
+            $order = null;
+            
+            $query->orderBy("no_of_ratings", "desc");
+            $query->orderBy("rating", "desc");
 
+        }
         /* || filter product by price  ||*/
        if ($sort == 'pv.price' && !empty($sort) && $sort != NULL) {
         $products=$query->orderBy('p.price',$order);
@@ -102,19 +110,6 @@ class Ec_product extends Model
             $products=$query->orderBy("rating", "desc");
         }
       
-        if (isset($filter) && !empty($filter['product_type']) && strtolower($filter['product_type']) == 'top_rated_product_including_all_products') {
-            $sort = null;
-            $order = null;
-            
-            $query->orderBy("no_of_ratings", "desc");
-            $query->orderBy("rating", "desc");
-        }
-        
-        if (isset($filter) && !empty($filter['product_type']) && $filter['product_type'] == 'new_added_products') {
-            $sort = 'p.id';
-            $order = 'desc';
-            $query->orderBy($sort,$order);
-        }
        
         if (isset($id) && !empty($id) && $id != null) {
            
@@ -125,13 +120,24 @@ class Ec_product extends Model
             } else {
                 if (isset($filter) && !empty($filter['is_similar_products']) && $filter['is_similar_products'] == '1') {
                     $products=$query->where('p.id','!=',$id);
+                    
+
                 } else {
                     $products=$query->where('p.id',$id);
-                    
+                  
                 }
                
             }
         }
+      
+        if (isset($filter) && !empty($filter['product_type']) && $filter['product_type'] == 'new_added_products') {
+            $sort = 'p.id';
+            $order = 'desc';
+            $query->orderBy($sort,$order);
+            
+        }
+       
+        
         if ($limit != null || $offset != null) {
             $products=$query->limit($limit)->offset($offset);
         }
@@ -143,7 +149,7 @@ class Ec_product extends Model
             ->join('ec_product_variation_items as pvi','pvi.variation_id','=','pv.id')
             ->whereIn('pvi.attribute_id', $str);
 
-           // dd();
+    
             
         }
     
@@ -197,21 +203,22 @@ public static function get_products_By_ids($products_ids,$user_id=null){
             $review= Ec_review::starTotalByID($value->id);
             $rating=$review['rating'];
             $no_of_ratings=$review['no_of_ratings'];
+            
         $data[$key]=[
                     'total'=>"14",
-                    'sales'=>"$sales",
+                    'sales'=>strval($sales),
                     'stock_type'=>null,
-                    'id'=>"$value->id",
+                    'id'=>strval($value->id),
                     'attr_value_ids'=>Ec_product::attr_value_ids($value->id),
                     'name'=>$value->product_name,
         /*static*/  'is_prices_inclusive_tax'=>"0",
                     'type'=>$type,
-                    "stock"=>"$value->quantity",
-                    "category_id"=>"$value->category_id",
+                    "stock"=>strval($value->quantity),
+                    "category_id"=>strval($value->category_id),
                     "short_description"=>$value->short_description,
                     "slug"=>$value->sku,
                     "description"=>Fun::output_escaping($value->content),
-        /*static*/  "total_allowed_quantity"=>"1",
+                    "total_allowed_quantity"=>($value->with_storehouse_management==1)?strval($value->quantity):"12",
         /*static*/  "minimum_order_quantity"=>"1",
         /*static*/  "quantity_step_size"=>"1",
         /*static*/  'cod_allowed'=>"0",
@@ -220,10 +227,10 @@ public static function get_products_By_ids($products_ids,$user_id=null){
                     "no_of_ratings"=>"$no_of_ratings",
                     "image"=>RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage()),
         /*static*/  "is_returnable"=>"0",
-        /*static*/  "is_cancelable"=>"0",
-        /*static*/  "cancelable_till"=>"",
+        /*static*/  "is_cancelable"=>"1",
+        /*static*/  "cancelable_till"=>"shipped",
         /*static*/  "indicator"=>"0",
-                    "other_images"=>Ec_product::getOtherImages($product_images,'small'),
+                    "other_images"=>[],
         /*static*/  "video_type"=>"",
         /*static*/  "video"=>"",
                     "tags"=>Ec_product::getTags($value->id),
@@ -235,14 +242,14 @@ public static function get_products_By_ids($products_ids,$user_id=null){
                     "tax_percentage"=>strval(round($value->percentage)),
         /*static*/  "review_images"=>Ec_review::get_review_images($value->id),
                     "attributes"=> $attributes,
-                    "variants"=>Ec_product::getVariants($value->id),
+                    "variants"=>Ec_product::getVariants($value->id,null,$user_id),
                     "min_max_price"=>Ec_product::getMin_max_price($value->id,$value->percentage),
-                    "is_purchased"=> false,
+                    "is_purchased"=> true,
                     "is_favorite"=>Ec_wish_list::is_favorite($value->id,$user_id),
                     "image_md"=>RvMedia::getImageUrl($default_imag,'medium', false, RvMedia::getDefaultImage()),
                     "image_sm"=>RvMedia::getImageUrl($default_imag,'small', false, RvMedia::getDefaultImage()),
-                    "other_images_sm"=>Ec_product::getOtherImages($product_images,'small'),
-                    "other_images_md"=>Ec_product::getOtherImages($product_images,'medium'),
+                    "other_images_sm"=>[],
+                    "other_images_md"=>[],
                     "variant_attributes"=>(object)$attributes
                 ];
             }
@@ -289,9 +296,10 @@ public static function get_products_By_ids($products_ids,$user_id=null){
     public static function  getVariantsImages($images,$size)
     {
          $image=[];
+        
          foreach ($images as $key => $value) {
-
-            $image[$key]=RvMedia::getImageUrl($value, $size, false);
+            if($value!=null)
+            $image[]=RvMedia::getImageUrl($value, $size, false);
          }
 
         return $image;
@@ -311,7 +319,7 @@ public static function get_products_By_ids($products_ids,$user_id=null){
         return $attributes;
     }
 
-    public static function getVariants($id,$variants_id=null)
+    public static function getVariants($id,$variants_id=null,$user_id=null)
     {
       $variants=  DB::table('ec_products as p')
         ->join('ec_product_variations as pv','p.id','=','pv.product_id')
@@ -334,14 +342,15 @@ public static function get_products_By_ids($products_ids,$user_id=null){
         foreach ($variants as $key => $value) {
 
             $product_images=json_decode($value->images);
+
             $variants_data[$key]=Ec_product::getVariant_ids($value->id);
             $variants_data[$key]+=[
 
-                'id'=>"$value->id",
-                'product_id'=>"$id", 
+                'id'=>strval($value->id),
+                'product_id'=>strval($id), 
                 'attribute_set'=>null,
-                "price"=>"$value->price",
-                "special_price"=>($value->sale_price>0)?"$value->sale_price":"0",
+                "price"=>strval($value->price),
+                "special_price"=>($value->sale_price>0)?strval($value->sale_price):"0",
                 "sku"=> $value->sku,
                 "images"=>Ec_product::getVariantsImages($product_images,null),
                 "availability"=>"1",
@@ -350,8 +359,8 @@ public static function get_products_By_ids($products_ids,$user_id=null){
                 "date_added"=>$value->created_at,
                 "images_md"=> Ec_product::getVariantsImages($product_images,'medium'),
                 "images_sm"=>Ec_product::getVariantsImages($product_images,'small'),
-                "cart_count"=>"0",
-                "is_purchased"=>0,
+                "cart_count"=>Fun::getCartCount($user_id,$value->id),
+                "is_purchased"=>1,
 
             ];
         }
@@ -409,12 +418,13 @@ public static function getVariant_ids($id){
         ->leftJoin('ec_taxes as tax','p.tax_id','=','tax.id')
         ->select('p.price','p.sale_price','tax.percentage as tax_percentage')->get()->toarray();
     }
-        // if ($percentage > 0) {
-        //     $price_tax_amount = $response[0]->price * ($percentage / 100);
-        //     $special_price_tax_amount = $response[0]->sale_price * ($percentage / 100);
-        // } 
-            $price_tax_amount = 0;
-            $special_price_tax_amount = 0;
+    if ((isset($response[0]->is_prices_inclusive_tax) && $response[0]->is_prices_inclusive_tax == 0) || (!isset($response[0]->is_prices_inclusive_tax)) && $percentage > 0) {
+        $price_tax_amount = $response[0]->price * ($percentage / 100);
+        $special_price_tax_amount = $response[0]->sale_price* ($percentage / 100);
+    } else {
+        $price_tax_amount = 0;
+        $special_price_tax_amount = 0;
+    }
         
              $response = array_map(function ($value) {
                   return (array)$value;

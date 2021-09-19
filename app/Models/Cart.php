@@ -96,8 +96,11 @@ class Cart extends Model
                     if ($stock < 0) {
                         $is_exceed_allowed_quantity_limit=true;
                         $error = true;
+                        $stock = intval($res[0]->quantity);
                         break;
+
                     }
+                  
                 }   
             }
             
@@ -177,8 +180,14 @@ class Cart extends Model
             //use to get first image in array it is defulte
             $product_images=json_decode( $data[$i]->images);
                 $default_imag=null;
-                if(!empty($product_images))
-                $default_imag=$product_images[0];
+                if(!empty($product_images)){
+                    
+                    foreach ($product_images as $key => $value) {
+                        if($value!=null)
+                        $default_imag=$value;
+                        break;
+                     }
+                }
 
 
             $prctg = (isset($data[$i]->tax_percentage) && intval($data[$i]->tax_percentage) > 0 && $data[$i]->tax_percentage != null) ? $data[$i]->tax_percentage : '0';
@@ -314,9 +323,11 @@ class Cart extends Model
             'p.price',
             'p.sale_price as special_price',
             'p.content as description',
+            'p.with_storehouse_management',
+            'p.quantity'
 
-        )->orderBy('c.id', 'DESC')->get()->toArray();
-    
+        )->orderBy('c.updated_at', 'DESC')->get()->toArray();
+
 
         if (!empty($res)) {
 
@@ -324,9 +335,15 @@ class Cart extends Model
                 //use to get first image url in array 
                 $product_images=json_decode($d->image);
                 $default_imag=null;
-                if(!empty($product_images))
-                $default_imag=$product_images[0];
-
+                if(!empty($product_images)){
+                    
+                    foreach ($product_images as $key => $value) {
+                        if($value!=null){
+                        $default_imag=$value;
+                        break;}
+                     }
+                }
+               
                 $d=(array)$d;
                $d['product_variant_id']=strval($d['product_variant_id']);
                $d['user_id']=strval($d['user_id']);
@@ -337,10 +354,12 @@ class Cart extends Model
                $d['is_prices_inclusive_tax']="0";
                $d['image']= RvMedia::getImageUrl($default_imag,null, false, RvMedia::getDefaultImage());
                $d['minimum_order_quantity']=strval(1);
-               $d['quantity_step_size']= strval(12);
-               $d['total_allowed_quantity'] = '';
+               $d['quantity_step_size']= null;
+               $d['total_allowed_quantity'] = ($d['with_storehouse_management']==0)?strval($d['quantity']):"12";
                $d['tax_percentage']=strval(Cart::get_tax_percentage($d['id']));
                $d['product_variants']= Ec_product::getVariants(null,$d['product_variant_id']);
+               unset($d['with_storehouse_management']);
+               unset($d['quantity']);
                 return $d;
             }, $res);
         }
@@ -353,97 +372,33 @@ class Cart extends Model
         if (isset($promo_code) && !empty($promo_code)) {
 
             //Fetch Promo Code Details
-            $promo_code =DB::table('ec_discounts as pc')->selectRaw('pc.*')
+            $promo_code_res =DB::table('ec_discounts as pc')
              ->where('pc.code',$promo_code)
              ->where('pc.start_date','<=',date('Y-m-d H:i:s'))
+             ->selectRaw('pc.*')
             
-             ->where(function($promo_code)
+             ->where(function($promo_code_res)
              {
-                $promo_code->when('pc.end_date',null)->where('pc.end_date','>=',date('Y-m-d H:i:s'));
+                $promo_code_res->where('pc.end_date',null)->orWhere('pc.end_date','>=',date('Y-m-d H:i:s'));
              })
-             
-
              ->get()->toArray();
-              
-            if (!empty($promo_code[0]['id'])) {
+     
+            if (isset($promo_code_res[0]->id)) {
 
-                if (intval($promo_code[0]['promo_used_counter']) < intval($promo_code[0]['no_of_users'])) {
+                if (intval($promo_code_res[0]->total_used) < intval($promo_code_res[0]->quantity)||$promo_code_res[0]->quantity==null) {
 
-                    if ($final_total >= intval($promo_code[0]['minimum_order_amount'])) {
+                    if ($final_total >= intval($promo_code_res[0]->min_order_price)) {
 
-                        if ($promo_code[0]['repeat_usage'] == 1 && ($promo_code[0]['user_promo_usage_counter'] <= $promo_code[0]['no_of_repeat_usage'])) {
-                            if (intval($promo_code[0]['user_promo_usage_counter']) <= intval($promo_code[0]['no_of_repeat_usage'])) {
-
-                                $response['error'] = false;
-                                $response['message'] = 'The promo code is valid';
-
-                                if ($promo_code[0]['discount_type'] == 'percentage') {
-                                    $promo_code_discount =  floatval($final_total  * $promo_code[0]['discount'] / 100);
-                                } else {
-                                    $promo_code_discount = $promo_code[0]['discount'];
-                                }
-                                if ($promo_code_discount <= $promo_code[0]['max_discount_amount']) {
-                                    $total = floatval($final_total) - $promo_code_discount;
-                                } else {
-                                    $total = floatval($final_total) - $promo_code[0]['max_discount_amount'];
-                                    $promo_code_discount = $promo_code[0]['max_discount_amount'];
-                                }
-                                $promo_code[0]['final_total'] = strval(floatval($total));
-                                $promo_code[0]['final_discount'] = strval(floatval($promo_code_discount));
-                                $response['data'] = $promo_code;
-                                return $response;
-                            } else {
-
-                                $response['error'] = true;
-                                $response['message'] = 'This promo code cannot be redeemed as it exceeds the usage limit';
-                                $response['data'] = array();
-                                return $response;
-                            }
-                        } else if ($promo_code[0]['repeat_usage'] == 0 && ($promo_code[0]['user_promo_usage_counter'] <= 0)) {
-                            if (intval($promo_code[0]['user_promo_usage_counter']) <= intval($promo_code[0]['no_of_repeat_usage'])) {
-
-                                $response['error'] = false;
-                                $response['message'] = 'The promo code is valid';
-
-                                if ($promo_code[0]['discount_type'] == 'percentage') {
-                                    $promo_code_discount =  floatval($final_total  * $promo_code[0]['discount'] / 100);
-                                } else {
-                                    $promo_code_discount = floatval($final_total - $promo_code[0]['discount']);
-                                }
-                                if ($promo_code_discount <= $promo_code[0]['max_discount_amount']) {
-                                    $total = floatval($final_total) - $promo_code_discount;
-                                } else {
-                                    $total = floatval($final_total) - $promo_code[0]['max_discount_amount'];
-                                    $promo_code_discount = $promo_code[0]['max_discount_amount'];
-                                }
-                                $promo_code[0]['final_total'] = strval(floatval($total));
-                                $promo_code[0]['final_discount'] = strval(floatval($promo_code_discount));
-                                $response['data'] = $promo_code;
-                                return $response;
-                            } else {
-
-                                $response['error'] = true;
-                                $response['message'] = 'This promo code cannot be redeemed as it exceeds the usage limit';
-                                $response['data'] = array();
-                                return $response;
-                            }
-                        } else {
-                            $response['error'] = true;
-                            $response['message'] = 'The promo has already been redeemed. cannot be reused';
-                            $response['data'] = array();
-                            return $response;
-                        }
                     } else {
-
                         $response['error'] = true;
-                        $response['message'] = 'This promo code is applicable only for amount greater than or equal to ' . $promo_code[0]['minimum_order_amount'];
+                        $response['message'] = 'This promo code is applicable only for amount greater than or equal to ' . $promo_code_res[0]->min_order_price;
                         $response['data'] = array();
                         return $response;
                     }
                 } else {
 
                     $response['error'] = true;
-                    $response['message'] = "This promo code is applicable only for first " . $promo_code[0]['no_of_users'] . " users";
+                    $response['message'] = "This promo code is applicable only for first " . $promo_code_res[0]->quantity . " users";
                     $response['data'] = array();
                     return $response;
                 }
@@ -454,7 +409,7 @@ class Cart extends Model
                 return $response;
             }
         }
-    }
         
-    
+    }
+         
 }

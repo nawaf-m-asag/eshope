@@ -6,10 +6,10 @@
     <title>{{ trans('plugins/ecommerce::order.invoice_for_order') }} {{ get_order_code($order->id) }}</title>
     <link rel="stylesheet" href="{{ asset('vendor/core/plugins/ecommerce/css/invoice.css') }}">
 </head>
-<body @if (BaseHelper::siteLanguageDirection() == 'rtl') dir="rtl" @endif>
+<body @if (BaseHelper::siteLanguageDirection() == 'rtl') dir="rtl" style="text-align:right !important" @endif>
     <div class="invoice-box">
         <table cellpadding="0" cellspacing="0">
-            <tr class="top">
+            <tr class="top" >
                 <td colspan="5">
                     <table>
                         <tr>

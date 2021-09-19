@@ -10,8 +10,15 @@ use App\Models\Ec_review;
 
 class ReviewsController extends Controller
 {
+    /*--user-rating
+        -set_product_rating
+        -delete_product_rating
+        -get_product_rating 
+    */ 
+    
     public function getReview(Request $request)
     {
+       // get product rating
         $product_id = isset($request->product_id)? $request->product_id: null;
         $offset = isset($request->offset)? $request->offset: 0;
         $limit = isset($request->limit)? $request->limit: 30;
@@ -42,33 +49,33 @@ class ReviewsController extends Controller
     } 
     public function setRating(Request $request)
     {
-      
-
+        //Set Rating product use when product status is completed 
         $validator = Validator::make($request->all(), [
             'user_id'=>'required|integer',    
             'product_id'=>'required|integer',
-            'rating'=>'required|integer',
-            'comment'=>'nullable|string',
-           
+            'rating'=>'required',
+            'comment'=>'nullable', 
           ]);
 
           $user_id =$request->user_id;
           $product_id =$request->product_id;
           $rating =$request->rating;
-          $comment = isset($request->comment)? $request->comment:'';
+          $comment = isset($request->comment)? $request->comment:null;
          
-
-      
         if ($validator->fails()) {
-          
             $response['error'] = true;
-            $response['message'] = "error";
+            $response['message'] = $validator->errors()->first();
             $response['data'] = array();
             return response()->json($response);
         } else {
            
-
-            $res = DB::table('ec_products as p')->join('ec_order_product as eop','eop.product_id','=','p.id')->join('ec_orders as eo','eop.order_id','=','eo.id')->where('eo.user_id',$user_id)->where('eop.product_id',$product_id)->where('eo.status','delivering')->limit(1)->get()->toarray();
+            $res = DB::table('ec_products as p')
+            ->join('ec_order_product as eop','eop.product_id','=','p.id')
+            ->join('ec_orders as eo','eop.order_id','=','eo.id')
+            ->where('eo.user_id',$user_id)
+            ->where('p.id',$product_id)
+            ->where('eo.status','completed')
+            ->limit(1)->get()->toArray();
            
             if (empty($res)) {
                 
@@ -77,8 +84,7 @@ class ReviewsController extends Controller
                 $response['data'] = array();
                 return response()->json($response);
             }
-
-           
+     
             $data=[
                 'customer_id'=>$user_id,    
                 'product_id'=>$product_id,
@@ -99,10 +105,10 @@ class ReviewsController extends Controller
             return response()->json($response);
         }
     }
+    //can't use
     public function delete_product_rating(Request $request)
     {
         
-   
         $validator = Validator::make($request->all(), [
             'rating_id'=>'required|integer',   
           ]);

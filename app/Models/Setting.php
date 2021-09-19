@@ -14,11 +14,14 @@ class Setting extends Model
     
         $res   = DB::table('app_settings')->select('*')->where('variable', $type)->get()->toArray();
         if (!empty($res)) {
+           
             if ($is_json) {
+            
                 return json_decode($res[0]->value, true);
             } else {
                 return Fun::output_escaping($res[0]->value);
             }
+            
         }
     }
     

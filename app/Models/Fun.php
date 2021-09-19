@@ -195,9 +195,23 @@ public static function is_exist($where, $table, $update_id = null)
         }
         return $response;
     }
+    public static function  getCartCount($user_id,$id){
+        
+            $ci = DB::table('cart');
+           
+            $ci= $ci->where('user_id', $user_id)->where('product_variant_id', $id);;
+           
+            $res= $ci->where('qty','>', 0)
+            ->where('is_saved_for_later', 0)
+            ->distinct()->select('qty')->get()->toArray();
+            if(!empty($res)&&isset($res[0]->qty)){
+                return strVal($res[0]->qty);
+            }
+            else{
+                return "0";
+            }
+    }
 
-
-
-
+    
    
 }

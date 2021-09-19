@@ -87,7 +87,7 @@ class SettingsController extends Controller
                         }
                         $general_settings[$type] = [];
                         $settings_res =Setting::get_settings($type, $isjson);
-                     
+                      
                         if ($type == 'logo') {
                             $settings_res = RvMedia::getImageUrl($settings_res,null, false, RvMedia::getDefaultImage());
                         }
@@ -101,6 +101,7 @@ class SettingsController extends Controller
                         //Strip tags in case of terms_conditions and privacy_policy
                         // $settings_res = !is_array($settings_res) ? strip_tags($settings_res) : $settings_res;
                         array_push($general_settings[$type], $settings_res);
+                        
                         // $general_settings[$type] = $settings_res;
                     }
                 }
@@ -108,6 +109,13 @@ class SettingsController extends Controller
 
                 $this->response['error'] = false;
                 $this->response['message'] = 'Settings retrieved successfully';
+                if(isset( $general_settings['system_settings']))
+                {
+                   
+                        $currency=Fun::fetch_details(['is_default' => 1], 'ec_currencies', 'symbol');
+                        $general_settings['system_settings'][0]['currency']=isset($currency[0]->symbol)?$currency[0]->symbol:'';
+                   
+                }
                 $this->response['data'] = $general_settings;
             } else {
                 $this->response['error'] = true;

@@ -166,7 +166,7 @@ class OrderHelper
      * @param Order $order
      * @return string
      */
-    public function generateInvoice($order)
+    public function generateInvoice22($order)
     {
         $folderPath = storage_path('app/public');
         if (!File::isDirectory($folderPath)) {
@@ -185,6 +185,7 @@ class OrderHelper
 
         return $invoice;
     }
+   
 
     /**
      * @param string $method

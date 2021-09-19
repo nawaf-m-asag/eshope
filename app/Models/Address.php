@@ -23,7 +23,7 @@ class Address extends Model
             'state',    
             'country',
             'latitude',    
-            'latitude',
+            'longitude',
             'is_default'
     ];
 
@@ -110,14 +110,10 @@ class Address extends Model
     
   public static function get_address($user_id, $id = false, $fetch_latest = false, $is_default = false)
     {
-        $where = [];
-     
+
            $query= DB::table('addresses as addr')->selectRaw('addr.*,a.name as area,a.minimum_free_delivery_order_amount,a.delivery_charges,c.name as city')
-               // ->where($where)
                 ->leftJoin('cities as c', 'addr.city_id','=','c.id')
                 ->leftJoin('areas as a','addr.area_id','=','a.id')
-             
-              //  ->groupBy('addr.id')
                 ->orderBy('addr.id', 'DESC');
                 if (isset($user_id) || $id != false) {
                     if (isset($user_id) && $user_id != null && !empty($user_id)) {
@@ -147,8 +143,5 @@ class Address extends Model
             }
             return $res;
         }
-    }
-   
-
-   
+    } 
 }

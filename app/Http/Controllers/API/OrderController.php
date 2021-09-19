@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Order;
+use App\Models\Ec_Order;
 use App\Models\Fun;
 
 class OrderController extends Controller
@@ -56,12 +56,12 @@ class OrderController extends Controller
         }
         else {
             $request->is_delivery_charge_returnable = isset($request->delivery_charge) && !empty($request->delivery_charge) && $request->delivery_charge!= '' && $request->delivery_charge> 0 ? 1 : 0;
-            $res = Order::place_order($request);
+            $res = Ec_Order::place_order($request);
             return response()->json($res);
         }
     }
 
-    public function getOrder(Request $request)
+    public function getOrder (Request $request)
     {
         // user_id:101
         // active_status: received  {received,delivered,cancelled,processed,returned}     // optional
@@ -89,14 +89,15 @@ class OrderController extends Controller
 
         if ($validator->fails()) {
             $this->response['error'] = true;
-            $this->response['message'] = $validator->errors()->first();;
+            $this->response['message'] = $validator->errors()->first();
             $this->response['data'] = array();
         } else {
             $multiple_status =   (isset($request->active_status) && !empty($request->active_status)) ? explode(',', $request->active_status) : false;
             $download_invoice =   (isset($request->download_invoice) && !empty($request->download_invoice)) ? $request->download_invoice: 1;
-            $order_details = Order::fetch_orders(false, $request->user_id, $multiple_status, false, $limit, $offset, $sort, $order, $download_invoice, false, false, $search);
-
+            $order_details = Ec_Order::fetch_orders(false, $request->user_id, $multiple_status, false, $limit, $offset, $sort, $order, $download_invoice, false, false, $search);
+           
             if (!empty($order_details)) {
+               
 
                 $this->response['error'] = false;
                 $this->response['message'] = 'Data retrieved successfully';
@@ -111,4 +112,41 @@ class OrderController extends Controller
         return response()->json($this->response);
     }
   
+
+
+
+    /* to update the status of complete order */
+    public function update_order_status(Request $request)
+    {
+
+    $validator = Validator::make($request->all(), [
+        'order_id'=>'required|numeric',    
+        'status'=>'required',
+      ]);
+    if ($validator->fails()) {
+        $this->response['error'] = true;
+        $this->response['message'] = $validator->errors()->first();
+        $this->response['data'] = array();
+        return response()->json($this->response);
+    } else {
+        $update_status= DB::table('ec_orders')->select('status')->where('id',$request->order_id)->get();
+   
+        if ($update_status[0]->status!='pending'&& $update_status[0]->status!='processing') {
+            $this->response['error'] = true;
+            $this->response['message'] = "Can not cancel this order ";
+            $this->response['data'] = [];
+            return response()->json($this->response);
+        }
+        else if($request->status=='cancelled'){
+                DB::table('ec_orders')->where('id',$request->order_id)->update(['status'=>'canceled']);
+                $orderId=strval(10000000+$request->order_id);
+                DB::table('ec_order_histories')->insert(['action'=>'cancel_order','description'=>'#'.$orderId.'  تم الغاء الطلب بواسطة العميل ','order_id'=>$request->order_id,'created_at'=>date('Y-m-d H:i:s'),'updated_at'=>date('Y-m-d H:i:s')]);
+                $this->response['error'] = false;
+                $this->response['message'] = 'Status Updated Successfully';
+                $this->response['data'] = array();
+                return response()->json($this->response);
+            }
+        }
+    }
+
 }

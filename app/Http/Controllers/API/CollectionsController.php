@@ -76,15 +76,11 @@ class CollectionsController extends Controller
                 if (!empty($res)&&isset($res[$key]->product_ids)) {
                     $product_ids = explode(',', $res[$key]->product_ids);
                     $product_ids = array_filter($product_ids);
-                    if (isset($request->top_rated_product) && !empty($request->top_rated_product)) {
-                        $filters['product_type'] = (isset($request->top_rated_product) && $request->top_rated_product == 1) ? 'top_rated_product_including_all_products' : null;
-                    }
-
+                   
                     $pro_details = Ec_product::fetch_product_json_data($user_id, (isset($filters)) ? $filters : null, (isset($product_ids) && !empty($product_ids)) ? $product_ids : null, null, $p_limit, $p_offset, $p_sort, $p_order);
                 
                     $total=DB::table('ec_product_collection_products')->where('product_collection_id',$collection->id)->count();
-
-                        $data[$key]['id']="$collection->id";
+                        $data[$key]['id']=strval($collection->id);
                         $data[$key]['title']=Fun::output_escaping($collection->name);
                         $data[$key]['short_description']=Fun::output_escaping($collection->description);
                         $data[$key]['style']="default";
@@ -94,7 +90,7 @@ class CollectionsController extends Controller
                         $data[$key]['product_type']="custom_products";
                         $data[$key]['date_added']=$collection->created_at->format('Y-m-d H:i:s');
                         
-                        $data[$key]['total']= "$total";
+                        $data[$key]['total']=strval($total);
                         $data[$key]['filters']=$pro_details['filters'];
                         $data[$key]['product_details'] =$pro_details['product'];
                 }

@@ -22,7 +22,7 @@ class ProductController extends Controller
             'offset'=>'nullable|integer',    
             'order'=>'nullable|string',
             'is_similar_products'=>'nullable|integer',
-            'top_rated_product'=>'nullable|string',
+            'top_rated_product'=>'nullable',
             'user_id'=>'nullable|string',
           ]);
       
@@ -44,7 +44,7 @@ class ProductController extends Controller
             $filters['tags']= isset($request->tags)? $request->tags:"";
             $filters['attribute_value_ids'] = (isset($request->attribute_value_ids)) ? $request->attribute_value_ids: null;
             $filters['is_similar_products']= isset($request->is_similar_products)? $request->is_similar_products: null;
-            $filters['product_type'] = isset($request->product_type )? $request->product_type :null;
+            $filters['product_type'] = (isset($request->top_rated_product) && $request->top_rated_product== 1) ? 'top_rated_product_including_all_products' : null;
             $category_id = isset($request->category_id)? $request->category_id:null;
             $product_id = isset($request->product_id)? $request->product_id:null;
             $customer_id = isset($request->user_id)? $request->user_id:null;

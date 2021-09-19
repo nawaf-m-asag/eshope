@@ -26,7 +26,7 @@ class AddressController  extends Controller
             'state'=>'nullable',    
             'country'=>'nullable',
             'latitude'=>'nullable',    
-            'latitude'=>'nullable',
+            'longitude'=>'nullable',
           ]);
 
 
@@ -73,9 +73,7 @@ class AddressController  extends Controller
          /*
              user_id:3    
          */
-       //if (!$this->verify_token()) {
-           //   return false;
-     //   }
+   
 
          $validator = Validator::make($request->all(), [
             'user_id'=>'required|numeric',   
@@ -104,5 +102,46 @@ class AddressController  extends Controller
          }
          return response()->json($this->response);
      }
+
+
+
+
+     //update_address
+    public function update_address(Request $request)
+    {
+   
+        $validator = Validator::make($request->all(), [
+            'user_id'=>'required|numeric',    
+            'type'=>'nullable',
+            'country_code'=>'nullable',    
+            'name'=>'nullable',
+            'mobile'=>'nullable|numeric',    
+            'alternate_mobile'=>'nullable|integer',
+            'address'=>'nullable',    
+            'landmark'=>'nullable',
+            'area_id'=>'nullable',    
+            'city_id'=>'nullable',
+            'pincode'=>'nullable|numeric',
+            'state'=>'nullable',    
+            'country'=>'nullable',
+            'latitude'=>'nullable',    
+            'longitude'=>'nullable',
+          ]);
+
+        if ($validator->fails()) {
+            $this->response['error'] = true;
+            $this->response['message'] = $validator->errors()->first();
+            $this->response['data'] = array();
+        } else {
+            Address::set_address($request);
+            $res = Address::get_address(null, $request->id, true);
+            $this->response['error'] = false;
+            $this->response['message'] = 'Address updated Successfully';
+            $this->response['data'] = $res;
+        }
+        return response()->json($this->response);
+    }
+
+
 }
 

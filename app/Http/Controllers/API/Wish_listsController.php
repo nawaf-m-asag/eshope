@@ -35,7 +35,7 @@ class Wish_listsController extends Controller
     
                 $query=DB::table('ec_products as p')
        
-                ->Join('ec_product_category_product as cp','cp.product_id','=','p.id')
+                ->leftJoin('ec_product_category_product as cp','cp.product_id','=','p.id')
                     ->leftJoin('ec_product_categories as c',function($query){
         
                         $query->on('c.id','=', DB::raw('(SELECT cp2.category_id FROM ec_product_category_product as cp2 WHERE p.id = cp2.product_id LIMIT 1)'));
@@ -57,10 +57,11 @@ class Wish_listsController extends Controller
                 'p.images',
                 'tax.percentage',
                 'p.is_variation',
-               'ewl.id as wish_lists_id'
+               'ewl.id as wish_lists_id',
+               'p.with_storehouse_management'
                 
                ]
-            )->get();
+            )->orderBy('ewl.id','DESC')->get();
             
                 
                 
